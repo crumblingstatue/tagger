@@ -15,7 +15,7 @@ impl List {
     }
     pub fn entries_matching_tags<T: AsRef<str>>(&self, tags: &[T]) -> Vec<&str> {
         let mut vec = Vec::new();
-        'entries: for (k, v) in self.entries.iter() {
+        'entries: for (k, v) in &self.entries {
             for tag in tags.iter() {
                 let mut has_tag = false;
                 for entry_tag in v.iter() {
@@ -52,13 +52,13 @@ impl List {
         for entry in try!(fs::read_dir(path)) {
             let entry = try!(entry);
             let name = entry.file_name().into_string().unwrap();
-            self.entries.entry(name).or_insert_with(|| Vec::new());
+            self.entries.entry(name).or_insert_with(Vec::new);
         }
         Ok(())
     }
     pub fn save_to_file<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         let mut writer = BufWriter::new(try!(fs::File::create(path)));
-        for (k, v) in self.entries.iter() {
+        for (k, v) in &self.entries {
             try!(write!(writer, "\"{}\" ", k));
             for tag in v.iter() {
                 try!(write!(writer, "{} ", tag));
