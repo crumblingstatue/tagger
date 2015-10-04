@@ -32,7 +32,13 @@ fn run() -> i32 {
                 list.save_to_file(LIST_DEFAULT_FILENAME).unwrap();
             }
             "filt" => {
-                let list = list::List::from_file(LIST_DEFAULT_FILENAME).unwrap();
+                let list = match list::List::from_file(LIST_DEFAULT_FILENAME) {
+                    Ok(list) => list,
+                    Err(e) => {
+                        writeln!(stderr(), "Error opening {}: {}", LIST_DEFAULT_FILENAME, e).unwrap();
+                        return 1;
+                    }
+                };
                 let tags = args.collect::<Vec<String>>();
                 for entry in list.entries_matching_tags(&tags) {
                     println!("{}", entry);
