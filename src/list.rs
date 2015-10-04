@@ -11,9 +11,7 @@ pub struct List {
 
 impl List {
     pub fn new() -> Self {
-        List {
-            entries: HashMap::new(),
-        }
+        List { entries: HashMap::new() }
     }
     pub fn entries_matching_tags<T: AsRef<str>>(&self, tags: &[T]) -> Vec<&str> {
         let mut vec = Vec::new();
@@ -41,9 +39,10 @@ impl List {
             let quot1 = line.find('"').unwrap();
             let quot2 = line[quot1 + 1..].find('"').unwrap();
             let filename = &line[quot1 + 1..quot2 + 1];
-            let tags = line[quot2 + 2..].split_whitespace()
-                                        .map(|s| s.to_owned())
-                                        .collect::<Vec<_>>();
+            let tags = line[quot2 + 2..]
+                           .split_whitespace()
+                           .map(|s| s.to_owned())
+                           .collect::<Vec<_>>();
             list.entries.insert(filename.into(), tags);
         }
         Ok(list)

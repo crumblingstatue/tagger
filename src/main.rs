@@ -20,8 +20,11 @@ fn run() -> i32 {
                 // Use "update" subcommand to update existing list.
                 // Use --force to generate new list anyway.
                 if let Ok(_) = std::fs::metadata(LIST_DEFAULT_FILENAME) {
-                    writeln!(stderr(), "Error: {} already exists. Use `update` subcommand \
-                                        to update an existing list.", LIST_DEFAULT_FILENAME).unwrap();
+                    writeln!(stderr(),
+                             "Error: {} already exists. Use `update` subcommand to update an \
+                              existing list.",
+                             LIST_DEFAULT_FILENAME)
+                        .unwrap();
                     return 1;
                 }
                 let mut list = list::List::new();
@@ -35,7 +38,11 @@ fn run() -> i32 {
                 let list = match list::List::from_file(LIST_DEFAULT_FILENAME) {
                     Ok(list) => list,
                     Err(e) => {
-                        writeln!(stderr(), "Error opening {}: {}", LIST_DEFAULT_FILENAME, e).unwrap();
+                        writeln!(stderr(),
+                                 "Error opening {}: {}",
+                                 LIST_DEFAULT_FILENAME,
+                                 e)
+                            .unwrap();
                         return 1;
                     }
                 };
