@@ -34,7 +34,6 @@ fn run() -> i32 {
             "filt" => {
                 let list = list::List::from_file(LIST_DEFAULT_FILENAME).unwrap();
                 let tags = args.collect::<Vec<String>>();
-                println!("{:#?}", list);
                 for entry in list.entries_matching_tags(&tags) {
                     println!("{}", entry);
                 }

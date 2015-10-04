@@ -17,8 +17,19 @@ impl List {
     }
     pub fn entries_matching_tags<T: AsRef<str>>(&self, tags: &[T]) -> Vec<&str> {
         let mut vec = Vec::new();
-        for (k, v) in self.entries.iter() {
-
+        'entries: for (k, v) in self.entries.iter() {
+            for tag in tags.iter() {
+                let mut has_tag = false;
+                for entry_tag in v.iter() {
+                    if tag.as_ref() == entry_tag {
+                        has_tag = true;
+                    }
+                }
+                if !has_tag {
+                    continue 'entries;
+                }
+            }
+            vec.push(&k[..]);
         }
         vec
     }
