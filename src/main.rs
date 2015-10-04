@@ -2,7 +2,7 @@ use std::env;
 use std::io::prelude::*;
 use std::io::stderr;
 
-mod list;
+mod tagmap;
 
 fn usage(cmd_name: &str) -> String {
     format!("Usage: {} gen/filt", cmd_name)
@@ -27,7 +27,7 @@ fn run() -> i32 {
                         .unwrap();
                     return 1;
                 }
-                let mut list = list::List::new();
+                let mut list = tagmap::TagMap::new();
                 if let Err(e) = list.update_from_dir(env::current_dir().unwrap()) {
                     writeln!(stderr(), "Error: {}", e).unwrap();
                     return 1;
@@ -35,7 +35,7 @@ fn run() -> i32 {
                 list.save_to_file(LIST_DEFAULT_FILENAME).unwrap();
             }
             "filt" => {
-                let list = match list::List::from_file(LIST_DEFAULT_FILENAME) {
+                let list = match tagmap::TagMap::from_file(LIST_DEFAULT_FILENAME) {
                     Ok(list) => list,
                     Err(e) => {
                         writeln!(stderr(),
