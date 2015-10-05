@@ -2,3 +2,6 @@
 name = "tagger"
 version = "0.1.0"
 authors = ["Mika Attila <radiantstatue@gmail.com>"]
+
+[dependencies]
+tagmap = { git = "https://github.com/crumblingstatue/rust-tagmap" }

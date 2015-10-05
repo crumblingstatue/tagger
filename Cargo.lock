@@ -1,4 +1,12 @@
 [root]
 name = "tagger"
 version = "0.1.0"
+dependencies = [
+ "tagmap 0.1.0 (git+https://github.com/crumblingstatue/rust-tagmap)",
+]
+
+[[package]]
+name = "tagmap"
+version = "0.1.0"
+source = "git+https://github.com/crumblingstatue/rust-tagmap#713f6f2cddbc115ae7058b50d3efcea945557d41"
 

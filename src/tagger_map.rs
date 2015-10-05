@@ -1,40 +1,19 @@
-use std::{io, fs};
+use tagmap::TagMap;
 use std::io::prelude::*;
-use std::io::{BufReader, BufWriter};
+use std::io::{self, BufReader, BufWriter};
 use std::path::Path;
-use std::collections::HashMap;
-use std::hash::Hash;
+use std::fs;
 
-#[derive(Debug)]
-pub struct TagMap<T: Eq + Hash, TAG: Eq> {
-    entries: HashMap<T, Vec<TAG>>,
+pub struct TaggerMap {
+    pub tag_map: TagMap<String, String>,
 }
 
-impl<T: Eq + Hash, TAG: Eq> TagMap<T, TAG> {
+impl TaggerMap {
     pub fn new() -> Self {
-        TagMap { entries: HashMap::new() }
-    }
-    pub fn entries_matching_tags(&self, tags: &[TAG]) -> Vec<&T> {
-        let mut vec = Vec::new();
-        'entries: for (k, v) in &self.entries {
-            for tag in tags.iter() {
-                let mut has_tag = false;
-                for entry_tag in v.iter() {
-                    if tag == entry_tag {
-                        has_tag = true;
-                    }
-                }
-                if !has_tag {
-                    continue 'entries;
-                }
-            }
-            vec.push(k);
+        TaggerMap{
+            tag_map: TagMap::new()
         }
-        vec
     }
-}
-
-impl TagMap<String, String> {
     pub fn from_file<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         let reader = BufReader::new(try!(fs::File::open(path)));
         let mut map = TagMap::new();
@@ -49,7 +28,9 @@ impl TagMap<String, String> {
                            .collect::<Vec<_>>();
             map.entries.insert(filename.into(), tags);
       }
-      Ok(map)
+      Ok(TaggerMap {
+          tag_map: map,
+      })
   }
 
   /// Add entries in a directory that aren't present in the List yet.
@@ -57,14 +38,14 @@ impl TagMap<String, String> {
         for entry in try!(fs::read_dir(path)) {
             let entry = try!(entry);
             let name = entry.file_name().into_string().unwrap();
-            self.entries.entry(name).or_insert_with(Vec::new);
+            self.tag_map.entries.entry(name).or_insert_with(Vec::new);
         }
         Ok(())
     }
 
     pub fn save_to_file<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
           let mut writer = BufWriter::new(try!(fs::File::create(path)));
-          for (k, v) in &self.entries {
+          for (k, v) in self.tag_map.entries.iter() {
               try!(write!(writer, "\"{}\" ", k));
               for tag in v.iter() {
                   try!(write!(writer, "{} ", tag));
