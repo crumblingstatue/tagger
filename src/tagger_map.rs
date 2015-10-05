@@ -45,7 +45,7 @@ impl TaggerMap {
 
     pub fn save_to_file<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
           let mut writer = BufWriter::new(try!(fs::File::create(path)));
-          for (k, v) in self.tag_map.entries.iter() {
+          for (k, v) in &self.tag_map.entries {
               try!(write!(writer, "\"{}\" ", k));
               for tag in v.iter() {
                   try!(write!(writer, "{} ", tag));
