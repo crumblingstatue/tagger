@@ -50,7 +50,7 @@ fn run() -> i32 {
                     }
                 };
                 let tags = args.collect::<Vec<String>>();
-                for entry in list.tag_map.entries_matching_tags(&tags) {
+                for entry in list.tag_map.matching(&tags) {
                     println!("{}", entry);
                 }
             }
