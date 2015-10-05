@@ -10,9 +10,7 @@ pub struct TaggerMap {
 
 impl TaggerMap {
     pub fn new() -> Self {
-        TaggerMap{
-            tag_map: TagMap::new()
-        }
+        TaggerMap { tag_map: TagMap::new() }
     }
     pub fn from_file<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         let reader = BufReader::new(try!(fs::File::open(path)));
@@ -27,13 +25,11 @@ impl TaggerMap {
                            .map(|s| s.to_owned())
                            .collect::<Vec<_>>();
             map.entries.insert(filename.into(), tags);
-      }
-      Ok(TaggerMap {
-          tag_map: map,
-      })
-  }
+        }
+        Ok(TaggerMap { tag_map: map })
+    }
 
-  /// Add entries in a directory that aren't present in the List yet.
+    /// Add entries in a directory that aren't present in the List yet.
     pub fn update_from_dir<P: AsRef<Path>>(&mut self, path: P) -> io::Result<()> {
         for entry in try!(fs::read_dir(path)) {
             let entry = try!(entry);
@@ -44,14 +40,14 @@ impl TaggerMap {
     }
 
     pub fn save_to_file<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
-          let mut writer = BufWriter::new(try!(fs::File::create(path)));
-          for (k, v) in &self.tag_map.entries {
-              try!(write!(writer, "\"{}\" ", k));
-              for tag in v.iter() {
-                  try!(write!(writer, "{} ", tag));
-              }
-              try!(write!(writer, "\n"));
-          }
-          Ok(())
-      }
+        let mut writer = BufWriter::new(try!(fs::File::create(path)));
+        for (k, v) in &self.tag_map.entries {
+            try!(write!(writer, "\"{}\" ", k));
+            for tag in v.iter() {
+                try!(write!(writer, "{} ", tag));
+            }
+            try!(write!(writer, "\n"));
+        }
+        Ok(())
+    }
 }
