@@ -21,6 +21,7 @@ pub fn parse_infix(text: &str) -> Result<MatchRule<String>, ParseError> {
         match t {
             Tag(ref s) => {
                 let rule = if not {
+                    not = false;
                     NotTags(vec![s.clone()])
                 } else {
                     Tags(vec![s.clone()])
