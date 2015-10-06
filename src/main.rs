@@ -4,8 +4,10 @@ use std::env;
 use std::io::prelude::*;
 use std::io::stderr;
 use tagger_map::TaggerMap;
+use infix::parse_infix;
 
 mod tagger_map;
+mod infix;
 
 fn usage(cmd_name: &str) -> String {
     format!("Usage: {} gen/filt", cmd_name)
@@ -49,8 +51,15 @@ fn run() -> i32 {
                         return 1;
                     }
                 };
-                let tags = args.collect::<Vec<String>>();
-                for entry in list.tag_map.matching(&tagmap::MatchRule::Tags(tags)) {
+                let expr = args.collect::<Vec<_>>().join(" ");
+                let rule = match parse_infix(&expr) {
+                    Ok(rule) => rule,
+                    Err(e) => {
+                        writeln!(stderr(), "Error parsing infix expression: {}", e).unwrap();
+                        return 1;
+                    }
+                };
+                for entry in list.tag_map.matching(&rule) {
                     println!("{}", entry);
                 }
             }
