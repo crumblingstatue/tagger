@@ -10,10 +10,10 @@ mod tagger_map;
 mod infix;
 
 fn usage(cmd_name: &str) -> String {
-    format!("Usage: {} gen/filt", cmd_name)
+    format!("Usage: {} gen/filt/update", cmd_name)
 }
 
-const LIST_DEFAULT_FILENAME: &'static str = "tagger.list";
+pub const LIST_DEFAULT_FILENAME: &'static str = "tagger.list";
 
 fn run() -> i32 {
     let mut args = env::args();
@@ -39,14 +39,26 @@ fn run() -> i32 {
                 }
                 list.save_to_file(LIST_DEFAULT_FILENAME).unwrap();
             }
+            "update" => {
+                let mut list = match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
+                    Ok(list) => list,
+                    Err(e) => {
+                        writeln!(stderr(), "Error opening {}: {}", LIST_DEFAULT_FILENAME, e)
+                            .unwrap();
+                        return 1;
+                    }
+                };
+                if let Err(e) = list.update_from_dir(env::current_dir().unwrap()) {
+                    writeln!(stderr(), "Error: {}", e).unwrap();
+                    return 1;
+                }
+                list.save_to_file(LIST_DEFAULT_FILENAME).unwrap();
+            }
             "filt" => {
                 let list = match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
                     Ok(list) => list,
                     Err(e) => {
-                        writeln!(stderr(),
-                                 "Error opening {}: {}",
-                                 LIST_DEFAULT_FILENAME,
-                                 e)
+                        writeln!(stderr(), "Error opening {}: {}", LIST_DEFAULT_FILENAME, e)
                             .unwrap();
                         return 1;
                     }

@@ -34,7 +34,9 @@ impl TaggerMap {
         for entry in try!(fs::read_dir(path)) {
             let entry = try!(entry);
             let name = entry.file_name().into_string().unwrap();
-            self.tag_map.entries.entry(name).or_insert_with(Vec::new);
+            if name != ::LIST_DEFAULT_FILENAME {
+                self.tag_map.entries.entry(name).or_insert_with(Vec::new);
+            }
         }
         Ok(())
     }
