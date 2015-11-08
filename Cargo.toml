@@ -5,3 +5,4 @@ authors = ["Mika Attila <radiantstatue@gmail.com>"]
 
 [dependencies]
 tagmap = { git = "https://github.com/crumblingstatue/rust-tagmap" }
+clap = "1.4.7"
