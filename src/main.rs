@@ -86,6 +86,8 @@ fn run() -> i32 {
         let stdin = std::io::stdin();
         let mut reader = stdin.lock();
         for (k, v) in &mut taggermap.tag_map.entries {
+            println!("Tags for {}: ", k);
+            std::io::stdout().flush().unwrap();
             if v.is_empty() {
                 let mut line = String::new();
                 Command::new(tool_path).arg(k).spawn().unwrap();
@@ -93,7 +95,6 @@ fn run() -> i32 {
                 for word in line.split_whitespace() {
                     v.push(word.to_owned());
                 }
-                println!("{}", k);
             }
         }
         taggermap.save_to_file(LIST_DEFAULT_FILENAME).unwrap();
