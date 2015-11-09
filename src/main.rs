@@ -7,6 +7,7 @@ use std::io::stderr;
 use tagger_map::TaggerMap;
 use infix::parse_infix;
 use clap::{App, SubCommand, AppSettings};
+use std::process::Command;
 
 mod tagger_map;
 mod infix;
@@ -19,6 +20,8 @@ fn run() -> i32 {
                       .subcommand(SubCommand::with_name("gen"))
                       .subcommand(SubCommand::with_name("update"))
                       .subcommand(SubCommand::with_name("filt").args_from_usage("[TAGS]..."))
+                      .subcommand(SubCommand::with_name("add-tags")
+                                      .args_from_usage("-w --with=<tool>"))
                       .get_matches();
     if let Some(_) = matches.subcommand_matches("gen") {
         // TODO: Only allow gen if tagger.list doesn't exist.
@@ -71,6 +74,29 @@ fn run() -> i32 {
         for entry in list.tag_map.matching(&rule) {
             println!("{}", entry);
         }
+    } else if let Some(matches) = matches.subcommand_matches("add-tags") {
+        let tool_path = matches.value_of("tool").unwrap();
+        let mut taggermap = match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
+            Ok(taggermap) => taggermap,
+            Err(e) => {
+                writeln!(stderr(), "Error opening {}: {}", LIST_DEFAULT_FILENAME, e).unwrap();
+                return 1;
+            }
+        };
+        let stdin = std::io::stdin();
+        let mut reader = stdin.lock();
+        for (k, v) in &mut taggermap.tag_map.entries {
+            if v.is_empty() {
+                let mut line = String::new();
+                Command::new(tool_path).arg(k).spawn().unwrap();
+                reader.read_line(&mut line).unwrap();
+                for word in line.split_whitespace() {
+                    v.push(word.to_owned());
+                }
+                println!("{}", k);
+            }
+        }
+        taggermap.save_to_file(LIST_DEFAULT_FILENAME).unwrap();
     }
     0
 }
