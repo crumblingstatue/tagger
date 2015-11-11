@@ -86,9 +86,9 @@ fn run() -> i32 {
         let stdin = std::io::stdin();
         let mut reader = stdin.lock();
         for (k, v) in &mut taggermap.tag_map.entries {
-            println!("Tags for {}: ", k);
-            std::io::stdout().flush().unwrap();
             if v.is_empty() {
+                println!("Tags for {}: ", k);
+                std::io::stdout().flush().unwrap();
                 let mut line = String::new();
                 Command::new(tool_path).arg(k).spawn().unwrap();
                 reader.read_line(&mut line).unwrap();
