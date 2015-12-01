@@ -62,8 +62,10 @@ fn run() -> i32 {
                 return 1;
             }
         };
-        let values = matches.values_of("TAGS").unwrap();
-        let expr = values.join(" ");
+        let expr = match matches.values_of("TAGS") {
+            Some(tags) => tags.join(" "),
+            None => String::new(),
+        };
         let rule = match parse_infix(&expr) {
             Ok(rule) => rule,
             Err(e) => {
