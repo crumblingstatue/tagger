@@ -2,28 +2,29 @@
 name = "tagger"
 version = "0.1.0"
 dependencies = [
- "clap 1.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "clap 1.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "tagmap 0.1.0 (git+https://github.com/crumblingstatue/rust-tagmap)",
 ]
 
 [[package]]
 name = "ansi_term"
-version = "0.6.3"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "bitflags"
-version = "0.3.2"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "clap"
-version = "1.4.7"
+version = "1.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "ansi_term 0.6.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "bitflags 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ansi_term 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "bitflags 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "strsim 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "vec_map 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -35,4 +36,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "tagmap"
 version = "0.1.0"
 source = "git+https://github.com/crumblingstatue/rust-tagmap#98cbd23efb461a6e539c13576d79189e872c7da8"
+
+[[package]]
+name = "vec_map"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 
