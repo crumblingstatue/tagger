@@ -30,15 +30,22 @@ impl TaggerMap {
     }
 
     /// Add entries in a directory that aren't present in the List yet.
-    pub fn update_from_dir<P: AsRef<Path>>(&mut self, path: P) -> io::Result<()> {
+    ///
+    /// Returns how much entries were added.
+    pub fn update_from_dir<P: AsRef<Path>>(&mut self, path: P) -> io::Result<usize> {
+        use std::collections::hash_map::Entry;
+        let mut added_count = 0;
         for entry in try!(fs::read_dir(path)) {
             let entry = try!(entry);
             let name = entry.file_name().into_string().unwrap();
             if name != ::LIST_DEFAULT_FILENAME {
-                self.tag_map.entries.entry(name).or_insert_with(Vec::new);
+                if let Entry::Vacant(entry) = self.tag_map.entries.entry(name) {
+                    entry.insert(Vec::new());
+                    added_count += 1;
+                }
             }
         }
-        Ok(())
+        Ok(added_count)
     }
 
     pub fn save_to_file<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {

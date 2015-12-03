@@ -49,9 +49,18 @@ fn run() -> i32 {
                 return 1;
             }
         };
-        if let Err(e) = list.update_from_dir(env::current_dir().unwrap()) {
-            writeln!(stderr(), "Error: {}", e).unwrap();
-            return 1;
+        match list.update_from_dir(env::current_dir().unwrap()) {
+            Ok(count) => {
+                if count > 0 {
+                    println!("Added {} entries.", count);
+                } else {
+                    println!("Already up to date.");
+                }
+            }
+            Err(e) => {
+                writeln!(stderr(), "Error: {}", e).unwrap();
+                return 1;
+            }
         }
         list.save_to_file(LIST_DEFAULT_FILENAME).unwrap();
     } else if let Some(matches) = matches.subcommand_matches("filt") {
