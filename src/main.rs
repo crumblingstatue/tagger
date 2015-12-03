@@ -1,6 +1,8 @@
 extern crate tagmap;
 extern crate clap;
 extern crate rustyline;
+#[cfg(feature = "random")]
+extern crate rand;
 
 use std::env;
 use std::io::prelude::*;
@@ -48,14 +50,42 @@ impl Completer for TagCompleterRefCell {
 }
 
 fn run() -> i32 {
-    let matches = App::new("tagger")
-                      .setting(AppSettings::SubcommandRequiredElseHelp)
-                      .subcommand(SubCommand::with_name("gen"))
-                      .subcommand(SubCommand::with_name("update"))
-                      .subcommand(SubCommand::with_name("filt").args_from_usage("[TAGS]..."))
-                      .subcommand(SubCommand::with_name("add-tags")
-                                      .args_from_usage("-w --with=<tool>"))
-                      .get_matches();
+    let mut app = App::new("tagger");
+    app = app.setting(AppSettings::SubcommandRequiredElseHelp)
+             .subcommand(SubCommand::with_name("gen"))
+             .subcommand(SubCommand::with_name("update"))
+             .subcommand(SubCommand::with_name("filt").args_from_usage("[TAGS]..."))
+             .subcommand(SubCommand::with_name("add-tags").args_from_usage("-w --with=<tool>"));
+    if cfg!(feature = "random") {
+        app = app.subcommand(SubCommand::with_name("random").args_from_usage("[TAGS]..."));
+    }
+    let matches = app.get_matches();
+    macro_rules! load_map {
+        () => {
+            match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
+                Ok(list) => list,
+                Err(e) => {
+                    writeln!(stderr(), "Error opening {}: {}", LIST_DEFAULT_FILENAME, e).unwrap();
+                    return 1;
+                }
+            }
+        }
+    }
+    macro_rules! parse_rule {
+        ($matches:expr) => {{
+            let expr = match $matches.values_of("TAGS") {
+                Some(tags) => tags.join(" "),
+                None => String::new(),
+            };
+            match parse_infix(&expr) {
+                Ok(rule) => rule,
+                Err(e) => {
+                    writeln!(stderr(), "Error parsing infix expression: {}", e).unwrap();
+                    return 1;
+                }
+            }
+        }}
+    }
     if let Some(_) = matches.subcommand_matches("gen") {
         // TODO: Only allow gen if tagger.list doesn't exist.
         // Use "update" subcommand to update existing list.
@@ -97,27 +127,21 @@ fn run() -> i32 {
         }
         list.save_to_file(LIST_DEFAULT_FILENAME).unwrap();
     } else if let Some(matches) = matches.subcommand_matches("filt") {
-        let list = match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
-            Ok(list) => list,
-            Err(e) => {
-                writeln!(stderr(), "Error opening {}: {}", LIST_DEFAULT_FILENAME, e).unwrap();
-                return 1;
-            }
-        };
-        let expr = match matches.values_of("TAGS") {
-            Some(tags) => tags.join(" "),
-            None => String::new(),
-        };
-        let rule = match parse_infix(&expr) {
-            Ok(rule) => rule,
-            Err(e) => {
-                writeln!(stderr(), "Error parsing infix expression: {}", e).unwrap();
-                return 1;
-            }
-        };
+        let list = load_map!();
+        let rule = parse_rule!(matches);
         for entry in list.tag_map.matching(&rule) {
             println!("{}", entry);
         }
+    } else if cfg!(feature = "random") {
+        if let Some(matches) = matches.subcommand_matches("random") {
+            use rand::{Rng, thread_rng};
+
+            let list = load_map!();
+            let rule = parse_rule!(matches);
+            let matching = list.tag_map.matching(&rule).collect::<Vec<_>>();
+            println!("{}", thread_rng().choose(&matching).unwrap());
+        }
+
     } else if let Some(matches) = matches.subcommand_matches("add-tags") {
         let tool_path = matches.value_of("tool").unwrap();
         let mut taggermap = match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
