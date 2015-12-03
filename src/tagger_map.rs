@@ -3,6 +3,7 @@ use std::io::prelude::*;
 use std::io::{self, BufReader, BufWriter};
 use std::path::Path;
 use std::fs;
+use std::collections::HashSet;
 
 pub struct TaggerMap {
     pub tag_map: TagMap<String, String>,
@@ -58,5 +59,18 @@ impl TaggerMap {
             try!(write!(writer, "\n"));
         }
         Ok(())
+    }
+
+    /// Returns all the different tags that are present in the database.
+    pub fn tags(&self) -> HashSet<String> {
+        let mut set = HashSet::new();
+
+        for (_, tags) in &self.tag_map.entries {
+            for t in tags {
+                set.insert(t.clone());
+            }
+        }
+
+        set
     }
 }

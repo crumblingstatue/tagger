@@ -1,5 +1,6 @@
 extern crate tagmap;
 extern crate clap;
+extern crate rustyline;
 
 use std::env;
 use std::io::prelude::*;
@@ -8,11 +9,43 @@ use tagger_map::TaggerMap;
 use infix::parse_infix;
 use clap::{App, SubCommand, AppSettings};
 use std::process::Command;
+use rustyline::Editor;
+use rustyline::completion::Completer;
+use std::collections::HashSet;
+use std::cell::RefCell;
 
 mod tagger_map;
 mod infix;
 
 pub const LIST_DEFAULT_FILENAME: &'static str = "tagger.list";
+
+struct TagCompleter {
+    tags: HashSet<String>,
+}
+
+impl TagCompleter {
+    fn new(tags: HashSet<String>) -> Self {
+        TagCompleter { tags: tags }
+    }
+}
+
+struct TagCompleterRefCell(RefCell<TagCompleter>);
+
+impl Completer for TagCompleterRefCell {
+    fn complete(&self, line: &str, pos: usize) -> rustyline::Result<(usize, Vec<String>)> {
+        // Beginning of word is either space before it, or 0
+        let begin = line.rfind(' ').map_or(0, |p| p + 1);
+        let tags = &self.0.borrow().tags;
+        let word = &line[begin..pos];
+        let mut candidates = Vec::new();
+        for t in tags {
+            if t.starts_with(word) {
+                candidates.push(t.to_owned());
+            }
+        }
+        Ok((begin, candidates))
+    }
+}
 
 fn run() -> i32 {
     let matches = App::new("tagger")
@@ -94,18 +127,18 @@ fn run() -> i32 {
                 return 1;
             }
         };
-        let stdin = std::io::stdin();
-        let mut reader = stdin.lock();
+        let completer = TagCompleterRefCell(RefCell::new(TagCompleter::new(taggermap.tags())));
+        let mut editor = Editor::new();
+        editor.set_completer(Some(&completer));
         for (k, v) in &mut taggermap.tag_map.entries {
             if v.is_empty() {
-                println!("Tags for {}: ", k);
-                std::io::stdout().flush().unwrap();
-                let mut line = String::new();
                 Command::new(tool_path).arg(k).spawn().unwrap();
-                reader.read_line(&mut line).unwrap();
+                let line = editor.readline(&format!("Tags for {}: ", k)).unwrap();
                 for word in line.split_whitespace() {
                     v.push(word.to_owned());
+                    completer.0.borrow_mut().tags.insert(word.to_owned());
                 }
+                editor.add_history_entry(&line);
             }
         }
         taggermap.save_to_file(LIST_DEFAULT_FILENAME).unwrap();
