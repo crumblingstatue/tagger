@@ -1,3 +1,5 @@
+#![feature(stmt_expr_attributes)]
+
 extern crate tagmap;
 extern crate clap;
 extern crate rustyline;
@@ -132,12 +134,13 @@ fn run() -> i32 {
         for entry in list.tag_map.matching(&rule) {
             println!("{}", entry);
         }
-    } else if cfg!(feature = "random") {
-        if let Some(matches) = matches.subcommand_matches("random") {
+    } else if let Some(_matches) = matches.subcommand_matches("random") {
+        #[cfg(feature = "random")]
+        {
             use rand::{Rng, thread_rng};
 
             let list = load_map!();
-            let rule = parse_rule!(matches);
+            let rule = parse_rule!(_matches);
             let matching = list.tag_map.matching(&rule).collect::<Vec<_>>();
             println!("{}", thread_rng().choose(&matching).unwrap());
         }
