@@ -11,7 +11,7 @@ use std::io::prelude::*;
 use std::io::stderr;
 use tagger_map::TaggerMap;
 use infix::parse_infix;
-use clap::{App, SubCommand, AppSettings};
+use clap::{App, SubCommand, AppSettings, Arg};
 use std::process::Command;
 use rustyline::Editor;
 use rustyline::completion::Completer;
@@ -57,7 +57,10 @@ fn run() -> i32 {
              .subcommand(SubCommand::with_name("gen"))
              .subcommand(SubCommand::with_name("update"))
              .subcommand(SubCommand::with_name("filt").args_from_usage("[TAGS]..."))
-             .subcommand(SubCommand::with_name("add-tags").args_from_usage("-w --with=<tool>"));
+             .subcommand(SubCommand::with_name("add-tags").args_from_usage("-w --with=<tool>"))
+             .subcommand(SubCommand::with_name("mv")
+                             .arg(Arg::with_name("src").required(true))
+                             .arg(Arg::with_name("dst").required(true)));
     if cfg!(feature = "random") {
         app = app.subcommand(SubCommand::with_name("random").args_from_usage("[TAGS]..."));
     }
@@ -169,6 +172,20 @@ fn run() -> i32 {
             }
         }
         taggermap.save_to_file(LIST_DEFAULT_FILENAME).unwrap();
+    } else if let Some(matches) = matches.subcommand_matches("mv") {
+        let src = matches.value_of("src").unwrap();
+        let dst = matches.value_of("dst").unwrap();
+        let mut list = match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
+            Ok(list) => list,
+            Err(e) => {
+                writeln!(stderr(), "Error opening {}: {}", LIST_DEFAULT_FILENAME, e).unwrap();
+                return 1;
+            }
+        };
+        let value = list.tag_map.entries.remove(src).expect("Didn't find entry.");
+        list.tag_map.entries.insert(dst.to_owned(), value);
+        std::fs::rename(src, dst).unwrap();
+        list.save_to_file(LIST_DEFAULT_FILENAME).unwrap();
     }
     0
 }
