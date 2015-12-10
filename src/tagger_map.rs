@@ -36,15 +36,28 @@ impl TaggerMap {
     pub fn update_from_dir<P: AsRef<Path>>(&mut self, path: P) -> io::Result<usize> {
         use std::collections::hash_map::Entry;
         let mut added_count = 0;
+        // Check for files that aren't part of the list and add them
         for entry in try!(fs::read_dir(path)) {
             let entry = try!(entry);
             let name = entry.file_name().into_string().unwrap();
             if name != ::LIST_DEFAULT_FILENAME {
-                if let Entry::Vacant(entry) = self.tag_map.entries.entry(name) {
+                if let Entry::Vacant(entry) = self.tag_map.entries.entry(name.clone()) {
+                    println!("Adding {}", name);
                     entry.insert(Vec::new());
                     added_count += 1;
                 }
             }
+        }
+        // Check for list entries that don't point to existing files are remove them
+        let mut to_remove: Vec<String> = Vec::new();
+        for k in self.tag_map.entries.keys() {
+            if fs::metadata(k).is_err() {
+                to_remove.push(k.clone());
+            }
+        }
+        for k in to_remove {
+            println!("Removing {}", k);
+            self.tag_map.entries.remove(&k);
         }
         Ok(added_count)
     }
