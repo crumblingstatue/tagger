@@ -48,7 +48,7 @@ impl TaggerMap {
                 }
             }
         }
-        // Check for list entries that don't point to existing files are remove them
+        // Check for list entries that don't point to existing files and remove them
         let mut to_remove: Vec<String> = Vec::new();
         for k in self.tag_map.entries.keys() {
             if fs::metadata(k).is_err() {
