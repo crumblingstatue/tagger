@@ -79,7 +79,7 @@ fn run() -> i32 {
     macro_rules! parse_rule {
         ($matches:expr) => {{
             let expr = match $matches.values_of("TAGS") {
-                Some(tags) => tags.join(" "),
+                Some(tags) => tags.collect::<Vec<_>>().join(" "),
                 None => String::new(),
             };
             match parse_infix(&expr) {
