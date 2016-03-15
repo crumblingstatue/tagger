@@ -9,6 +9,12 @@ pub struct TaggerMap {
     pub tag_map: TagMap<String, String>,
 }
 
+impl Default for TaggerMap {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TaggerMap {
     pub fn new() -> Self {
         TaggerMap { tag_map: TagMap::new() }
