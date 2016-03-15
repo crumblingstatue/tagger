@@ -84,7 +84,7 @@ impl TaggerMap {
     pub fn tags(&self) -> HashSet<String> {
         let mut set = HashSet::new();
 
-        for (_, tags) in &self.tag_map.entries {
+        for tags in self.tag_map.entries.values() {
             for t in tags {
                 set.insert(t.clone());
             }
