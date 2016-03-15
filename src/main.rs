@@ -57,7 +57,12 @@ fn run() -> i32 {
              .subcommand(SubCommand::with_name("gen"))
              .subcommand(SubCommand::with_name("update"))
              .subcommand(SubCommand::with_name("filt").args_from_usage("[TAGS]..."))
-             .subcommand(SubCommand::with_name("add-tags").args_from_usage("-w --with=<tool>"))
+             .subcommand(SubCommand::with_name("add-tags").arg(Arg::with_name("TOOL")
+                                                                   .short("w")
+                                                                   .long("with")
+                                                                   .required(true)
+                                                                   .takes_value(true)
+                                                                   .value_name("TOOL")))
              .subcommand(SubCommand::with_name("mv")
                              .arg(Arg::with_name("src").required(true))
                              .arg(Arg::with_name("dst").required(true)));
@@ -149,7 +154,7 @@ fn run() -> i32 {
         }
 
     } else if let Some(matches) = matches.subcommand_matches("add-tags") {
-        let tool_path = matches.value_of("tool").unwrap();
+        let tool_path = matches.value_of("TOOL").unwrap();
         let mut taggermap = match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
             Ok(taggermap) => taggermap,
             Err(e) => {
