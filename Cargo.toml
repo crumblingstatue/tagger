@@ -9,6 +9,6 @@ default = ["random"]
 
 [dependencies]
 tagmap = { git = "https://github.com/crumblingstatue/rust-tagmap" }
-clap = "2.2"
-rustyline = "0.2.1"
-rand = { version = "0.3.12", optional = true }
+clap = "2.3"
+rustyline = "0.2.2"
+rand = { version = "0.3.14", optional = true }
