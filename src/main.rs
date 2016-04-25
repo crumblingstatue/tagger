@@ -15,7 +15,7 @@ use clap::{App, SubCommand, AppSettings, Arg};
 use std::process::Command;
 use rustyline::Editor;
 use rustyline::completion::Completer;
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 use std::cell::RefCell;
 
 mod tagger_map;
@@ -24,11 +24,11 @@ mod infix;
 pub const LIST_DEFAULT_FILENAME: &'static str = "tagger.list";
 
 struct TagCompleter {
-    tags: HashSet<String>,
+    tags: BTreeSet<String>,
 }
 
 impl TagCompleter {
-    fn new(tags: HashSet<String>) -> Self {
+    fn new(tags: BTreeSet<String>) -> Self {
         TagCompleter { tags: tags }
     }
 }
@@ -65,7 +65,8 @@ fn run() -> i32 {
                                                                    .value_name("TOOL")))
              .subcommand(SubCommand::with_name("mv")
                              .arg(Arg::with_name("src").required(true))
-                             .arg(Arg::with_name("dst").required(true)));
+                             .arg(Arg::with_name("dst").required(true)))
+             .subcommand(SubCommand::with_name("list-tags"));
     if cfg!(feature = "random") {
         app = app.subcommand(SubCommand::with_name("random").args_from_usage("[TAGS]..."));
     }
@@ -191,6 +192,18 @@ fn run() -> i32 {
         list.tag_map.entries.insert(dst.to_owned(), value);
         std::fs::rename(src, dst).unwrap();
         list.save_to_file(LIST_DEFAULT_FILENAME).unwrap();
+    } else if let Some(_) = matches.subcommand_matches("list-tags") {
+        let list = match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
+            Ok(list) => list,
+            Err(e) => {
+                writeln!(stderr(), "Error opening {}: {}", LIST_DEFAULT_FILENAME, e).unwrap();
+                return 1;
+            }
+        };
+        let tags = list.tags();
+        for tag in tags {
+            println!("{}", tag);
+        }
     }
     0
 }
