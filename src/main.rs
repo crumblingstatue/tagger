@@ -5,13 +5,16 @@ extern crate clap;
 extern crate rustyline;
 #[cfg(feature = "random")]
 extern crate rand;
+extern crate gtk;
+extern crate gdk_pixbuf;
+extern crate gdk;
 
 use std::env;
 use std::io::prelude::*;
 use std::io::stderr;
 use tagger_map::TaggerMap;
 use infix::parse_infix;
-use clap::{App, SubCommand, AppSettings, Arg};
+use clap::{App, AppSettings, Arg, SubCommand};
 use std::process::Command;
 use rustyline::Editor;
 use rustyline::completion::Completer;
@@ -20,6 +23,7 @@ use std::cell::RefCell;
 
 mod tagger_map;
 mod infix;
+mod gui;
 
 pub const LIST_DEFAULT_FILENAME: &'static str = "tagger.list";
 
@@ -54,19 +58,20 @@ impl Completer for TagCompleterRefCell {
 fn run() -> i32 {
     let mut app = App::new("tagger");
     app = app.setting(AppSettings::SubcommandRequiredElseHelp)
-             .subcommand(SubCommand::with_name("gen"))
-             .subcommand(SubCommand::with_name("update"))
-             .subcommand(SubCommand::with_name("filt").args_from_usage("[TAGS]..."))
-             .subcommand(SubCommand::with_name("add-tags").arg(Arg::with_name("TOOL")
-                                                                   .short("w")
-                                                                   .long("with")
-                                                                   .required(true)
-                                                                   .takes_value(true)
-                                                                   .value_name("TOOL")))
-             .subcommand(SubCommand::with_name("mv")
-                             .arg(Arg::with_name("src").required(true))
-                             .arg(Arg::with_name("dst").required(true)))
-             .subcommand(SubCommand::with_name("list-tags"));
+        .subcommand(SubCommand::with_name("gen"))
+        .subcommand(SubCommand::with_name("update"))
+        .subcommand(SubCommand::with_name("filt").args_from_usage("[TAGS]..."))
+        .subcommand(SubCommand::with_name("add-tags").arg(Arg::with_name("TOOL")
+            .short("w")
+            .long("with")
+            .required(true)
+            .takes_value(true)
+            .value_name("TOOL")))
+        .subcommand(SubCommand::with_name("mv")
+            .arg(Arg::with_name("src").required(true))
+            .arg(Arg::with_name("dst").required(true)))
+        .subcommand(SubCommand::with_name("list-tags"))
+        .subcommand(SubCommand::with_name("gui"));
     if cfg!(feature = "random") {
         app = app.subcommand(SubCommand::with_name("random").args_from_usage("[TAGS]..."));
     }
@@ -205,6 +210,18 @@ fn run() -> i32 {
         for tag in tags {
             println!("{}", tag);
         }
+    } else if let Some(_) = matches.subcommand_matches("gui") {
+        use std::rc::Rc;
+        use std::cell::RefCell;
+
+        let list = match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
+            Ok(list) => Rc::new(RefCell::new(list)),
+            Err(e) => {
+                writeln!(stderr(), "Error opening {}: {}", LIST_DEFAULT_FILENAME, e).unwrap();
+                return 1;
+            }
+        };
+        gui::run(list);
     }
     0
 }

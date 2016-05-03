@@ -12,3 +12,6 @@ tagmap = { git = "https://github.com/crumblingstatue/rust-tagmap" }
 clap = "2.3"
 rustyline = "0.2.2"
 rand = { version = "0.3.14", optional = true }
+gtk = { version = "0.0.7", features = ["v3_10"] }
+gdk-pixbuf = "*"
+gdk = "*"

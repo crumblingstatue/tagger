@@ -28,9 +28,9 @@ impl TaggerMap {
             let quot2 = line[quot1 + 1..].find('"').unwrap();
             let filename = &line[quot1 + 1..quot2 + 1];
             let tags = line[quot2 + 2..]
-                           .split_whitespace()
-                           .map(|s| s.to_owned())
-                           .collect::<Vec<_>>();
+                .split_whitespace()
+                .map(|s| s.to_owned())
+                .collect::<Vec<_>>();
             map.entries.insert(filename.into(), tags);
         }
         Ok(TaggerMap { tag_map: map })
