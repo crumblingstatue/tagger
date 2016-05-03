@@ -8,7 +8,7 @@ random = ["rand"]
 default = ["random"]
 
 [dependencies]
-tagmap = { git = "https://github.com/crumblingstatue/rust-tagmap" }
+tagmap = { path = "/home/snake/projects/github/crumblingstatue/tagmap" }
 clap = "2.3"
 rustyline = "0.2.2"
 rand = { version = "0.3.14", optional = true }
