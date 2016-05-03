@@ -68,17 +68,21 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
 
         move |window, event| {
             use gdk::enums::key;
+            use std::cmp;
+
             let key = event.get_keyval();
             if key == key::Page_Down {
+                let map = tagger_map.borrow();
                 grid.remove_row(0);
                 grid.remove_row(0);
-                counter.set(counter.get() + 1);
-                update_grid(&grid, &tagger_map.borrow(), counter.get());
+                let max_offset = (map.tag_map.entries.len() / SHOW_AT_ONCE) - 1;
+                counter.set(cmp::min(counter.get(), max_offset) + 1);
+                update_grid(&grid, &map, counter.get());
                 window.show_all();
             } else if key == key::Page_Up {
                 grid.remove_row(0);
                 grid.remove_row(0);
-                counter.set(counter.get() - 1);
+                counter.set(cmp::max(counter.get(), 1) - 1);
                 update_grid(&grid, &tagger_map.borrow(), counter.get());
                 window.show_all();
             }
