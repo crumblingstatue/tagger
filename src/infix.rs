@@ -10,7 +10,7 @@ impl fmt::Display for ParseError {
     }
 }
 
-/// Parse inxif boolean algebra into a rule
+/// Parse infix boolean algebra into a rule
 pub fn parse_infix(text: &str) -> Result<MatchRule<String>, ParseError> {
     use tagmap::MatchRule::*;
     use self::Token::*;
