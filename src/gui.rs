@@ -12,7 +12,10 @@ use tagger_map::TaggerMap;
 
 const SHOW_AT_ONCE: usize = 10;
 
-fn update_grid(grid: &Grid, entries: MatchingEntries<String, String>, offset: usize) {
+fn update_grid(grid: &Grid,
+               entries: MatchingEntries<String, String>,
+               offset: usize,
+               map: Rc<RefCell<TaggerMap>>) {
     for (i, (k, v)) in entries.skip(offset * SHOW_AT_ONCE)
         .take(SHOW_AT_ONCE)
         .enumerate() {
@@ -36,7 +39,32 @@ fn update_grid(grid: &Grid, entries: MatchingEntries<String, String>, offset: us
                     };
                     let b = Box::new(Orientation::Vertical, 2);
                     b.add(&image);
-                    b.add(&Entry::new_with_buffer(&EntryBuffer::new(Some(&k))));
+                    let filename_entry = Entry::new_with_buffer(&EntryBuffer::new(Some(&k)));
+                    filename_entry.connect_key_press_event({
+                        use gdk::enums::key;
+
+                        let src = k.clone();
+                        let map = map.clone();
+
+                        move |entry, event| {
+                            let key = event.get_keyval();
+
+                            if key == key::Return {
+                                let dst = entry.get_text().unwrap();
+                                let mut map = map.borrow_mut();
+                                let value = map.tag_map
+                                    .entries
+                                    .remove(&src)
+                                    .expect("Didn't find entry.");
+                                map.tag_map.entries.insert(dst.clone(), value);
+                                ::std::fs::rename(&src, &dst).unwrap();
+                                map.save_to_file(::LIST_DEFAULT_FILENAME).unwrap();
+                            }
+
+                            Inhibit(false)
+                        }
+                    });
+                    b.add(&filename_entry);
                     b.add(&Entry::new_with_buffer(&EntryBuffer::new(Some(&v.join(" ")))));
                     slot.insert(b.clone());
                     b
@@ -87,7 +115,8 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
                                         tagger_map.borrow()
                                             .tag_map
                                             .matching_entries(&rule.borrow()),
-                                        0);
+                                        0,
+                                        tagger_map.clone());
                             window.show_all();
                         }
                         Err(e) => println!("{}", e),
@@ -133,7 +162,7 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
                     }
                 };
                 page_counter.set(cmp::min(page_counter.get() + 1, max_offset));
-                update_grid(&grid, entries, page_counter.get());
+                update_grid(&grid, entries, page_counter.get(), tagger_map.clone());
                 window.show_all();
             } else if key == key::Page_Up {
                 grid.remove_row(0);
@@ -141,7 +170,8 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
                 page_counter.set(cmp::max(page_counter.get(), 1) - 1);
                 update_grid(&grid,
                             tagger_map.borrow().tag_map.matching_entries(&rule.borrow()),
-                            page_counter.get());
+                            page_counter.get(),
+                            tagger_map.clone());
                 window.show_all();
             }
             Inhibit(false)
@@ -149,7 +179,8 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
     });
     update_grid(&grid,
                 tagger_map.borrow().tag_map.matching_entries(&rule.borrow()),
-                0);
+                0,
+                tagger_map.clone());
     window.show_all();
     gtk::main();
 }
