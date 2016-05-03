@@ -4,6 +4,7 @@ use gtk::{Box, Entry, EntryBuffer, Grid, Image, Orientation, Window, WindowType}
 use gdk_pixbuf::{InterpType, Pixbuf};
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::collections::HashMap;
 
 use tagger_map::TaggerMap;
 
@@ -16,20 +17,33 @@ fn update_grid(grid: &Grid, tagger_map: &TaggerMap, offset: usize) {
         .skip(offset * SHOW_AT_ONCE)
         .take(SHOW_AT_ONCE)
         .enumerate() {
-        let image = match Pixbuf::new_from_file(k) {
-            Ok(buf) => {
-                Image::new_from_pixbuf(Some(&buf.scale_simple(192, 192, InterpType::Bilinear)
-                    .expect("Failed to scale image")))
+        thread_local!(static CACHE: RefCell<HashMap<String, Box>> = RefCell::new(HashMap::new()));
+        let b = CACHE.with(|cache| {
+            use std::collections::hash_map::Entry as HashEntry;
+
+            match cache.borrow_mut().entry(k.clone()) {
+                HashEntry::Occupied(slot) => slot.get().clone(),
+                HashEntry::Vacant(slot) => {
+                    let image = match Pixbuf::new_from_file(k) {
+                        Ok(buf) => {
+                            let scaled = buf.scale_simple(192, 192, InterpType::Bilinear)
+                                .expect("Failed to scale image");
+                            Image::new_from_pixbuf(Some(&scaled))
+                        }
+                        Err(e) => {
+                            println!("Error: Failed to load image: {}", e);
+                            Image::new()
+                        }
+                    };
+                    let b = Box::new(Orientation::Vertical, 2);
+                    b.add(&image);
+                    b.add(&Entry::new_with_buffer(&EntryBuffer::new(Some(&k))));
+                    b.add(&Entry::new_with_buffer(&EntryBuffer::new(Some(&v.join(" ")))));
+                    slot.insert(b.clone());
+                    b
+                }
             }
-            Err(e) => {
-                println!("Error: Failed to load image: {}", e);
-                Image::new()
-            }
-        };
-        let b = Box::new(Orientation::Vertical, 2);
-        b.add(&image);
-        b.add(&Entry::new_with_buffer(&EntryBuffer::new(Some(&k))));
-        b.add(&Entry::new_with_buffer(&EntryBuffer::new(Some(&v.join(" ")))));
+        });
         grid.attach(&b, (i % 5) as i32, (i / 5) as i32, 1, 1);
     }
 }
