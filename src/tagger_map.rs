@@ -40,7 +40,7 @@ impl TaggerMap {
     ///
     /// Returns how much entries were added.
     pub fn update_from_dir<P: AsRef<Path>>(&mut self, path: P) -> io::Result<usize> {
-        use std::collections::hash_map::Entry;
+        use std::collections::btree_map::Entry;
         let mut added_count = 0;
         // Check for files that aren't part of the list and add them
         for entry in try!(fs::read_dir(path)) {

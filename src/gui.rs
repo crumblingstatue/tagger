@@ -15,7 +15,8 @@ const SHOW_AT_ONCE: usize = 10;
 fn update_grid(grid: &Grid,
                entries: MatchingEntries<String, String>,
                offset: usize,
-               map: Rc<RefCell<TaggerMap>>) {
+               map: Rc<RefCell<TaggerMap>>,
+               window: Window) {
     for (i, (k, v)) in entries.skip(offset * SHOW_AT_ONCE)
         .take(SHOW_AT_ONCE)
         .enumerate() {
@@ -45,6 +46,7 @@ fn update_grid(grid: &Grid,
 
                         let src = k.clone();
                         let map = map.clone();
+                        let window = window.clone();
 
                         move |entry, event| {
                             let key = event.get_keyval();
@@ -52,6 +54,20 @@ fn update_grid(grid: &Grid,
                             if key == key::Return {
                                 let dst = entry.get_text().unwrap();
                                 let mut map = map.borrow_mut();
+                                if map.tag_map.entries.get(&dst).is_some() {
+                                    use gtk::{ButtonsType, DIALOG_MODAL, MessageDialog,
+                                              MessageType};
+                                    let msg = format!("A file with the name \"{}\" already exists.",
+                                                      &dst);
+                                    let dialog = MessageDialog::new(Some(&window),
+                                                                    DIALOG_MODAL,
+                                                                    MessageType::Info,
+                                                                    ButtonsType::Ok,
+                                                                    &msg);
+                                    dialog.run();
+                                    dialog.destroy();
+                                    return Inhibit(false);
+                                }
                                 let value = map.tag_map
                                     .entries
                                     .remove(&src)
@@ -116,7 +132,8 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
                                             .tag_map
                                             .matching_entries(&rule.borrow()),
                                         0,
-                                        tagger_map.clone());
+                                        tagger_map.clone(),
+                                        window.clone());
                             window.show_all();
                         }
                         Err(e) => println!("{}", e),
@@ -162,7 +179,11 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
                     }
                 };
                 page_counter.set(cmp::min(page_counter.get() + 1, max_offset));
-                update_grid(&grid, entries, page_counter.get(), tagger_map.clone());
+                update_grid(&grid,
+                            entries,
+                            page_counter.get(),
+                            tagger_map.clone(),
+                            window.clone());
                 window.show_all();
             } else if key == key::Page_Up {
                 grid.remove_row(0);
@@ -171,7 +192,8 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
                 update_grid(&grid,
                             tagger_map.borrow().tag_map.matching_entries(&rule.borrow()),
                             page_counter.get(),
-                            tagger_map.clone());
+                            tagger_map.clone(),
+                            window.clone());
                 window.show_all();
             }
             Inhibit(false)
@@ -180,7 +202,8 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
     update_grid(&grid,
                 tagger_map.borrow().tag_map.matching_entries(&rule.borrow()),
                 0,
-                tagger_map.clone());
+                tagger_map.clone(),
+                window.clone());
     window.show_all();
     gtk::main();
 }
