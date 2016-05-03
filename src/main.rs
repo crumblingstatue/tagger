@@ -168,8 +168,9 @@ fn run() -> i32 {
         editor.set_completer(Some(&completer));
         for (k, v) in &mut taggermap.tag_map.entries {
             if v.is_empty() {
-                Command::new(tool_path).arg(k).spawn().unwrap();
+                let mut cmd = Command::new(tool_path).arg(k).spawn().unwrap();
                 let line = editor.readline(&format!("Tags for {}: ", k)).unwrap();
+                cmd.kill().unwrap();
                 for word in line.split_whitespace() {
                     v.push(word.to_owned());
                     completer.0.borrow_mut().tags.insert(word.to_owned());
