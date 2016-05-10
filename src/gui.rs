@@ -40,7 +40,7 @@ fn update_grid(grid: &Grid,
                     };
                     let b = Box::new(Orientation::Vertical, 2);
                     b.add(&image);
-                    let filename_entry = Entry::new_with_buffer(&EntryBuffer::new(Some(&k)));
+                    let filename_entry = Entry::new_with_buffer(&EntryBuffer::new(Some(k)));
                     filename_entry.connect_key_press_event({
                         use gdk::enums::key;
 
