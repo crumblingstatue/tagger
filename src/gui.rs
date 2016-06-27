@@ -172,11 +172,7 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
                     if n_images % SHOW_AT_ONCE != 0 {
                         n_pages += 1;
                     }
-                    if n_pages > 0 {
-                        n_pages - 1
-                    } else {
-                        0
-                    }
+                    if n_pages > 0 { n_pages - 1 } else { 0 }
                 };
                 page_counter.set(cmp::min(page_counter.get() + 1, max_offset));
                 update_grid(&grid,
