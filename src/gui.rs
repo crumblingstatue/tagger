@@ -81,7 +81,28 @@ fn update_grid(grid: &Grid,
                         }
                     });
                     b.add(&filename_entry);
-                    b.add(&Entry::new_with_buffer(&EntryBuffer::new(Some(&v.join(" ")))));
+                    let tag_entry = Entry::new_with_buffer(&EntryBuffer::new(Some(&v.join(" "))));
+                    tag_entry.connect_key_press_event({
+                        use gdk::enums::key;
+
+                        let map_key = k.clone();
+                        let map = map.clone();
+
+                        move |entry, event| {
+                            let key = event.get_keyval();
+
+                            if key == key::Return {
+                                let text = entry.get_text().unwrap();
+                                let mut map = map.borrow_mut();
+                                *map.tag_map.entries.get_mut(&map_key).unwrap() =
+                                    text.split_whitespace().map(|s| s.to_owned()).collect();
+                                map.save_to_file(::LIST_DEFAULT_FILENAME).unwrap();
+                            }
+
+                            Inhibit(false)
+                        }
+                    });
+                    b.add(&tag_entry);
                     slot.insert(b.clone());
                     b
                 }
