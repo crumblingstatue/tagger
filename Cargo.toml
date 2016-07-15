@@ -13,5 +13,5 @@ clap = "2.4.3"
 rustyline = "0.2.2"
 rand = { version = "0.3.14", optional = true }
 gtk = { version = "0.1", features = ["v3_10"] }
-gdk-pixbuf = "*"
-gdk = "*"
+gdk-pixbuf = "0.1"
+gdk = "0.5"
