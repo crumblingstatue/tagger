@@ -42,13 +42,12 @@ fn update_grid(grid: &Grid,
                     b.add(&image);
                     let filename_entry = Entry::new_with_buffer(&EntryBuffer::new(Some(k)));
                     filename_entry.connect_key_press_event({
-                        use gdk::enums::key;
-
                         let src = k.clone();
                         let map = map.clone();
                         let window = window.clone();
 
                         move |entry, event| {
+                            use gdk::enums::key;
                             let key = event.get_keyval();
 
                             if key == key::Return {
@@ -83,12 +82,11 @@ fn update_grid(grid: &Grid,
                     b.add(&filename_entry);
                     let tag_entry = Entry::new_with_buffer(&EntryBuffer::new(Some(&v.join(" "))));
                     tag_entry.connect_key_press_event({
-                        use gdk::enums::key;
-
                         let map_key = k.clone();
                         let map = map.clone();
 
                         move |entry, event| {
+                            use gdk::enums::key;
                             let key = event.get_keyval();
 
                             if key == key::Return {
