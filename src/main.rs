@@ -9,17 +9,17 @@ extern crate gtk;
 extern crate gdk_pixbuf;
 extern crate gdk;
 
+use clap::{App, AppSettings, Arg, SubCommand};
+use infix::parse_infix;
+use rustyline::Editor;
+use rustyline::completion::Completer;
+use std::cell::RefCell;
+use std::collections::BTreeSet;
 use std::env;
 use std::io::prelude::*;
 use std::io::stderr;
-use tagger_map::TaggerMap;
-use infix::parse_infix;
-use clap::{App, AppSettings, Arg, SubCommand};
 use std::process::Command;
-use rustyline::Editor;
-use rustyline::completion::Completer;
-use std::collections::BTreeSet;
-use std::cell::RefCell;
+use tagger_map::TaggerMap;
 
 mod tagger_map;
 mod infix;

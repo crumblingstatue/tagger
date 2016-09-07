@@ -1,14 +1,14 @@
-use gtk;
-use gtk::prelude::*;
-use gtk::{Box, Entry, EntryBuffer, Grid, Image, Label, Orientation, Window, WindowType};
 use gdk_pixbuf::{InterpType, Pixbuf};
-use std::rc::Rc;
+use gtk;
+use gtk::{Box, Entry, EntryBuffer, Grid, Image, Label, Orientation, Window, WindowType};
+use gtk::prelude::*;
+use infix::parse_infix;
 use std::cell::RefCell;
 use std::collections::HashMap;
-use tagmap::{MatchRule, MatchingEntries};
-use infix::parse_infix;
+use std::rc::Rc;
 
 use tagger_map::TaggerMap;
+use tagmap::{MatchRule, MatchingEntries};
 
 const SHOW_AT_ONCE: usize = 10;
 

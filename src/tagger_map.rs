@@ -1,9 +1,9 @@
-use tagmap::TagMap;
-use std::io::prelude::*;
-use std::io::{self, BufReader, BufWriter};
-use std::path::Path;
-use std::fs;
 use std::collections::BTreeSet;
+use std::fs;
+use std::io::{self, BufReader, BufWriter};
+use std::io::prelude::*;
+use std::path::Path;
+use tagmap::TagMap;
 
 pub struct TaggerMap {
     pub tag_map: TagMap<String, String>,

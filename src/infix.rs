@@ -1,5 +1,5 @@
-use tagmap::MatchRule;
 use std::fmt;
+use tagmap::MatchRule;
 
 #[derive(Debug, PartialEq)]
 pub struct ParseError;
