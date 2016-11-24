@@ -102,11 +102,11 @@ fn run() -> i32 {
             }
         }}
     }
-    if let Some(_) = matches.subcommand_matches("gen") {
+    if matches.subcommand_matches("gen").is_some() {
         // TODO: Only allow gen if tagger.list doesn't exist.
         // Use "update" subcommand to update existing list.
         // Use --force to generate new list anyway.
-        if let Ok(_) = std::fs::metadata(LIST_DEFAULT_FILENAME) {
+        if std::fs::metadata(LIST_DEFAULT_FILENAME).is_ok() {
             writeln!(stderr(),
                      "Error: {} already exists. Use `update` subcommand to update an existing \
                       list.",
@@ -120,7 +120,7 @@ fn run() -> i32 {
             return 1;
         }
         list.save_to_file(LIST_DEFAULT_FILENAME).unwrap();
-    } else if let Some(_) = matches.subcommand_matches("update") {
+    } else if matches.subcommand_matches("update").is_some() {
         let mut list = match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
             Ok(list) => list,
             Err(e) => {
@@ -198,7 +198,7 @@ fn run() -> i32 {
         list.tag_map.entries.insert(dst.to_owned(), value);
         std::fs::rename(src, dst).unwrap();
         list.save_to_file(LIST_DEFAULT_FILENAME).unwrap();
-    } else if let Some(_) = matches.subcommand_matches("list-tags") {
+    } else if matches.subcommand_matches("list-tags").is_some() {
         let list = match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
             Ok(list) => list,
             Err(e) => {
@@ -210,7 +210,7 @@ fn run() -> i32 {
         for tag in tags {
             println!("{}", tag);
         }
-    } else if let Some(_) = matches.subcommand_matches("gui") {
+    } else if matches.subcommand_matches("gui").is_some() {
         use std::rc::Rc;
         use std::cell::RefCell;
 
