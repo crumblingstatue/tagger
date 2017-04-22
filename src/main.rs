@@ -156,7 +156,9 @@ fn run() -> i32 {
             let list = load_map!();
             let rule = parse_rule!(matches);
             let matching = list.tag_map.matching(&rule).collect::<Vec<_>>();
-            println!("{}", thread_rng().choose(&matching).unwrap());
+            if let Some(choice) = thread_rng().choose(&matching) {
+                println!("{}", choice);
+            }
         }
 
     } else if let Some(matches) = matches.subcommand_matches("add-tags") {
