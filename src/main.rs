@@ -1,5 +1,3 @@
-#![feature(stmt_expr_attributes)]
-
 extern crate tagmap;
 extern crate clap;
 extern crate rustyline;
