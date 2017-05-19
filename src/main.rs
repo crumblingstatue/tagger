@@ -14,8 +14,6 @@ use rustyline::completion::Completer;
 use std::cell::RefCell;
 use std::collections::BTreeSet;
 use std::env;
-use std::io::prelude::*;
-use std::io::stderr;
 use std::process::Command;
 use tagger_map::TaggerMap;
 
@@ -60,14 +58,14 @@ fn run() -> i32 {
         .subcommand(SubCommand::with_name("update"))
         .subcommand(SubCommand::with_name("filt").args_from_usage("[TAGS]..."))
         .subcommand(SubCommand::with_name("add-tags").arg(Arg::with_name("TOOL")
-            .short("w")
-            .long("with")
-            .required(true)
-            .takes_value(true)
-            .value_name("TOOL")))
+                                                              .short("w")
+                                                              .long("with")
+                                                              .required(true)
+                                                              .takes_value(true)
+                                                              .value_name("TOOL")))
         .subcommand(SubCommand::with_name("mv")
-            .arg(Arg::with_name("src").required(true))
-            .arg(Arg::with_name("dst").required(true)))
+                        .arg(Arg::with_name("src").required(true))
+                        .arg(Arg::with_name("dst").required(true)))
         .subcommand(SubCommand::with_name("list-tags"))
         .subcommand(SubCommand::with_name("gui"));
     if cfg!(feature = "random") {
@@ -79,7 +77,7 @@ fn run() -> i32 {
             match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
                 Ok(list) => list,
                 Err(e) => {
-                    writeln!(stderr(), "Error opening {}: {}", LIST_DEFAULT_FILENAME, e).unwrap();
+                    eprintln!( "Error opening {}: {}", LIST_DEFAULT_FILENAME, e);
                     return 1;
                 }
             }
@@ -94,7 +92,7 @@ fn run() -> i32 {
             match parse_infix(&expr) {
                 Ok(rule) => rule,
                 Err(e) => {
-                    writeln!(stderr(), "Error parsing infix expression: {}", e).unwrap();
+                    eprintln!( "Error parsing infix expression: {}", e);
                     return 1;
                 }
             }
@@ -105,16 +103,14 @@ fn run() -> i32 {
         // Use "update" subcommand to update existing list.
         // Use --force to generate new list anyway.
         if std::fs::metadata(LIST_DEFAULT_FILENAME).is_ok() {
-            writeln!(stderr(),
-                     "Error: {} already exists. Use `update` subcommand to update an existing \
+            eprintln!("Error: {} already exists. Use `update` subcommand to update an existing \
                       list.",
-                     LIST_DEFAULT_FILENAME)
-                .unwrap();
+                      LIST_DEFAULT_FILENAME);
             return 1;
         }
         let mut list = TaggerMap::new();
         if let Err(e) = list.update_from_dir(env::current_dir().unwrap()) {
-            writeln!(stderr(), "Error: {}", e).unwrap();
+            eprintln!("Error: {}", e);
             return 1;
         }
         list.save_to_file(LIST_DEFAULT_FILENAME).unwrap();
@@ -122,7 +118,7 @@ fn run() -> i32 {
         let mut list = match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
             Ok(list) => list,
             Err(e) => {
-                writeln!(stderr(), "Error opening {}: {}", LIST_DEFAULT_FILENAME, e).unwrap();
+                eprintln!("Error opening {}: {}", LIST_DEFAULT_FILENAME, e);
                 return 1;
             }
         };
@@ -135,7 +131,7 @@ fn run() -> i32 {
                 }
             }
             Err(e) => {
-                writeln!(stderr(), "Error: {}", e).unwrap();
+                eprintln!("Error: {}", e);
                 return 1;
             }
         }
@@ -164,7 +160,7 @@ fn run() -> i32 {
         let mut taggermap = match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
             Ok(taggermap) => taggermap,
             Err(e) => {
-                writeln!(stderr(), "Error opening {}: {}", LIST_DEFAULT_FILENAME, e).unwrap();
+                eprintln!("Error opening {}: {}", LIST_DEFAULT_FILENAME, e);
                 return 1;
             }
         };
@@ -190,11 +186,14 @@ fn run() -> i32 {
         let mut list = match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
             Ok(list) => list,
             Err(e) => {
-                writeln!(stderr(), "Error opening {}: {}", LIST_DEFAULT_FILENAME, e).unwrap();
+                eprintln!("Error opening {}: {}", LIST_DEFAULT_FILENAME, e);
                 return 1;
             }
         };
-        let value = list.tag_map.entries.remove(src).expect("Didn't find entry.");
+        let value = list.tag_map
+            .entries
+            .remove(src)
+            .expect("Didn't find entry.");
         list.tag_map.entries.insert(dst.to_owned(), value);
         std::fs::rename(src, dst).unwrap();
         list.save_to_file(LIST_DEFAULT_FILENAME).unwrap();
@@ -202,7 +201,7 @@ fn run() -> i32 {
         let list = match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
             Ok(list) => list,
             Err(e) => {
-                writeln!(stderr(), "Error opening {}: {}", LIST_DEFAULT_FILENAME, e).unwrap();
+                eprintln!("Error opening {}: {}", LIST_DEFAULT_FILENAME, e);
                 return 1;
             }
         };
@@ -217,7 +216,7 @@ fn run() -> i32 {
         let list = match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
             Ok(list) => Rc::new(RefCell::new(list)),
             Err(e) => {
-                writeln!(stderr(), "Error opening {}: {}", LIST_DEFAULT_FILENAME, e).unwrap();
+                eprintln!("Error opening {}: {}", LIST_DEFAULT_FILENAME, e);
                 return 1;
             }
         };

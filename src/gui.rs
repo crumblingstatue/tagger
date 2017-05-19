@@ -17,9 +17,10 @@ fn update_grid(grid: &Grid,
                offset: usize,
                map: Rc<RefCell<TaggerMap>>,
                window: Window) {
-    for (i, (k, v)) in entries.skip(offset * SHOW_AT_ONCE)
-        .take(SHOW_AT_ONCE)
-        .enumerate() {
+    for (i, (k, v)) in entries
+            .skip(offset * SHOW_AT_ONCE)
+            .take(SHOW_AT_ONCE)
+            .enumerate() {
         thread_local!(static CACHE: RefCell<HashMap<String, Box>> = RefCell::new(HashMap::new()));
         let b = CACHE.with(|cache| {
             use std::collections::hash_map::Entry as HashEntry;
@@ -42,11 +43,11 @@ fn update_grid(grid: &Grid,
                     b.add(&image);
                     let filename_entry = Entry::new_with_buffer(&EntryBuffer::new(Some(k)));
                     filename_entry.connect_key_press_event({
-                        let src = k.clone();
-                        let map = map.clone();
-                        let window = window.clone();
+                                                               let src = k.clone();
+                                                               let map = map.clone();
+                                                               let window = window.clone();
 
-                        move |entry, event| {
+                                                               move |entry, event| {
                             use gdk::enums::key;
                             let key = event.get_keyval();
 
@@ -78,14 +79,14 @@ fn update_grid(grid: &Grid,
 
                             Inhibit(false)
                         }
-                    });
+                                                           });
                     b.add(&filename_entry);
                     let tag_entry = Entry::new_with_buffer(&EntryBuffer::new(Some(&v.join(" "))));
                     tag_entry.connect_key_press_event({
-                        let map_key = k.clone();
-                        let map = map.clone();
+                                                          let map_key = k.clone();
+                                                          let map = map.clone();
 
-                        move |entry, event| {
+                                                          move |entry, event| {
                             use gdk::enums::key;
                             let key = event.get_keyval();
 
@@ -99,7 +100,7 @@ fn update_grid(grid: &Grid,
 
                             Inhibit(false)
                         }
-                    });
+                                                      });
                     b.add(&tag_entry);
                     slot.insert(b.clone());
                     b
@@ -129,13 +130,13 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
     grid.set_row_spacing(8);
     grid.set_column_spacing(8);
     entry.connect_key_press_event({
-        let rule = rule.clone();
-        let window = window.clone();
-        let grid = grid.clone();
-        let tagger_map = tagger_map.clone();
-        let page_counter = page_counter.clone();
+                                      let rule = rule.clone();
+                                      let window = window.clone();
+                                      let grid = grid.clone();
+                                      let tagger_map = tagger_map.clone();
+                                      let page_counter = page_counter.clone();
 
-        move |entry, event| {
+                                      move |entry, event| {
             let key = event.get_keyval();
 
             if key == key::Return {
@@ -147,7 +148,8 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
                             grid.remove_row(0);
                             page_counter.set(0);
                             update_grid(&grid,
-                                        tagger_map.borrow()
+                                        tagger_map
+                                            .borrow()
                                             .tag_map
                                             .matching_entries(&rule.borrow()),
                                         0,
@@ -161,21 +163,21 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
             }
             Inhibit(false)
         }
-    });
+                                  });
     let v_box = Box::new(Orientation::Vertical, 8);
     v_box.add(&h_box);
     v_box.add(&grid);
     window.add(&v_box);
     window.connect_delete_event(|_, _| {
-        gtk::main_quit();
-        Inhibit(false)
-    });
+                                    gtk::main_quit();
+                                    Inhibit(false)
+                                });
     window.connect_key_press_event({
-        let tagger_map = tagger_map.clone();
-        let grid = grid.clone();
-        let rule = rule.clone();
+                                       let tagger_map = tagger_map.clone();
+                                       let grid = grid.clone();
+                                       let rule = rule.clone();
 
-        move |window, event| {
+                                       move |window, event| {
             use std::cmp;
 
             let key = event.get_keyval();
@@ -213,7 +215,7 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
             }
             Inhibit(false)
         }
-    });
+                                   });
     update_grid(&grid,
                 tagger_map.borrow().tag_map.matching_entries(&rule.borrow()),
                 0,
