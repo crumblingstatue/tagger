@@ -77,13 +77,17 @@ fn tokenize(text: &str) -> Vec<Token> {
 #[test]
 fn test_tokenize() {
     use self::Token::*;
-    assert_eq!(tokenize("foo !bar"),
-               vec![Tag("foo".into()), PrefixNot, Tag("bar".into())]);
+    assert_eq!(
+        tokenize("foo !bar"),
+        vec![Tag("foo".into()), PrefixNot, Tag("bar".into())]
+    );
 }
 
 #[test]
 fn test_parse() {
     use tagmap::MatchRule::*;
-    assert_eq!(parse_infix("foo !bar"),
-               Ok(Rules(vec![Tags(vec!["foo".into()]), NotTags(vec!["bar".into()])])));
+    assert_eq!(
+        parse_infix("foo !bar"),
+        Ok(Rules(vec![Tags(vec!["foo".into()]), NotTags(vec!["bar".into()])]))
+    );
 }

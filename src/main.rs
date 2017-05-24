@@ -57,15 +57,21 @@ fn run() -> i32 {
         .subcommand(SubCommand::with_name("gen"))
         .subcommand(SubCommand::with_name("update"))
         .subcommand(SubCommand::with_name("filt").args_from_usage("[TAGS]..."))
-        .subcommand(SubCommand::with_name("add-tags").arg(Arg::with_name("TOOL")
-                                                              .short("w")
-                                                              .long("with")
-                                                              .required(true)
-                                                              .takes_value(true)
-                                                              .value_name("TOOL")))
-        .subcommand(SubCommand::with_name("mv")
-                        .arg(Arg::with_name("src").required(true))
-                        .arg(Arg::with_name("dst").required(true)))
+        .subcommand(
+            SubCommand::with_name("add-tags").arg(
+                Arg::with_name("TOOL")
+                    .short("w")
+                    .long("with")
+                    .required(true)
+                    .takes_value(true)
+                    .value_name("TOOL"),
+            ),
+        )
+        .subcommand(
+            SubCommand::with_name("mv")
+                .arg(Arg::with_name("src").required(true))
+                .arg(Arg::with_name("dst").required(true)),
+        )
         .subcommand(SubCommand::with_name("list-tags"))
         .subcommand(SubCommand::with_name("gui"));
     if cfg!(feature = "random") {
@@ -103,9 +109,11 @@ fn run() -> i32 {
         // Use "update" subcommand to update existing list.
         // Use --force to generate new list anyway.
         if std::fs::metadata(LIST_DEFAULT_FILENAME).is_ok() {
-            eprintln!("Error: {} already exists. Use `update` subcommand to update an existing \
+            eprintln!(
+                "Error: {} already exists. Use `update` subcommand to update an existing \
                       list.",
-                      LIST_DEFAULT_FILENAME);
+                LIST_DEFAULT_FILENAME
+            );
             return 1;
         }
         let mut list = TaggerMap::new();
