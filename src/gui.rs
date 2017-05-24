@@ -16,7 +16,7 @@ fn update_grid(grid: &Grid,
                entries: MatchingEntries<String, String>,
                offset: usize,
                map: Rc<RefCell<TaggerMap>>,
-               window: Window) {
+               window: &Window) {
     for (i, (k, v)) in entries
             .skip(offset * SHOW_AT_ONCE)
             .take(SHOW_AT_ONCE)
@@ -154,7 +154,7 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
                                             .matching_entries(&rule.borrow()),
                                         0,
                                         tagger_map.clone(),
-                                        window.clone());
+                                        &window);
                             window.show_all();
                         }
                         Err(e) => println!("{}", e),
@@ -200,7 +200,7 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
                             entries,
                             page_counter.get(),
                             tagger_map.clone(),
-                            window.clone());
+                            window);
                 window.show_all();
             } else if key == key::Page_Up {
                 grid.remove_row(0);
@@ -210,7 +210,7 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
                             tagger_map.borrow().tag_map.matching_entries(&rule.borrow()),
                             page_counter.get(),
                             tagger_map.clone(),
-                            window.clone());
+                            window);
                 window.show_all();
             }
             Inhibit(false)
@@ -220,7 +220,7 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
                 tagger_map.borrow().tag_map.matching_entries(&rule.borrow()),
                 0,
                 tagger_map.clone(),
-                window.clone());
+                &window);
     window.show_all();
     gtk::main();
 }
