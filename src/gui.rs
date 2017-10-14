@@ -47,7 +47,7 @@ fn update_grid(
                     let filename_entry = Entry::new_with_buffer(&EntryBuffer::new(Some(k)));
                     filename_entry.connect_key_press_event({
                         let src = k.clone();
-                        let map = map.clone();
+                        let map = Rc::clone(&map);
                         let window = window.clone();
 
                         move |entry, event| {
@@ -91,7 +91,7 @@ fn update_grid(
                     let tag_entry = Entry::new_with_buffer(&EntryBuffer::new(Some(&v.join(" "))));
                     tag_entry.connect_key_press_event({
                         let map_key = k.clone();
-                        let map = map.clone();
+                        let map = Rc::clone(&map);
 
                         move |entry, event| {
                             use gdk::enums::key;
@@ -137,11 +137,11 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
     grid.set_row_spacing(8);
     grid.set_column_spacing(8);
     entry.connect_key_press_event({
-        let rule = rule.clone();
+        let rule = Rc::clone(&rule);
         let window = window.clone();
         let grid = grid.clone();
-        let tagger_map = tagger_map.clone();
-        let page_counter = page_counter.clone();
+        let tagger_map = Rc::clone(&tagger_map);
+        let page_counter = Rc::clone(&page_counter);
 
         move |entry, event| {
             let key = event.get_keyval();
@@ -158,7 +158,7 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
                                 &grid,
                                 tagger_map.borrow().tag_map.matching_entries(&rule.borrow()),
                                 0,
-                                tagger_map.clone(),
+                                Rc::clone(&tagger_map),
                                 &window,
                             );
                             window.show_all();
@@ -179,9 +179,9 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
         Inhibit(false)
     });
     window.connect_key_press_event({
-        let tagger_map = tagger_map.clone();
+        let tagger_map = Rc::clone(&tagger_map);
         let grid = grid.clone();
-        let rule = rule.clone();
+        let rule = Rc::clone(&rule);
 
         move |window, event| {
             use std::cmp;
@@ -210,7 +210,7 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
                     &grid,
                     entries,
                     page_counter.get(),
-                    tagger_map.clone(),
+                    Rc::clone(&tagger_map),
                     window,
                 );
                 window.show_all();
@@ -222,7 +222,7 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
                     &grid,
                     tagger_map.borrow().tag_map.matching_entries(&rule.borrow()),
                     page_counter.get(),
-                    tagger_map.clone(),
+                    Rc::clone(&tagger_map),
                     window,
                 );
                 window.show_all();
@@ -234,7 +234,7 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
         &grid,
         tagger_map.borrow().tag_map.matching_entries(&rule.borrow()),
         0,
-        tagger_map.clone(),
+        Rc::clone(&tagger_map),
         &window,
     );
     window.show_all();
