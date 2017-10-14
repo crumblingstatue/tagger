@@ -115,6 +115,13 @@ fn update_grid(
             }
         });
         grid.attach(&b, (i % 5) as i32, (i / 5) as i32, 1, 1);
+        // We have to force a redraw in this stupid convoluted way, just so we
+        // can show new images as they finished loading.
+        grid.queue_draw();
+        window.show_all();
+        while gtk::events_pending() {
+            gtk::main_iteration_do(true);
+        }
     }
 }
 
