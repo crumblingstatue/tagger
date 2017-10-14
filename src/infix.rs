@@ -56,12 +56,10 @@ fn tokenize(text: &str) -> Vec<Token> {
             '!' => tokens.push(PrefixNot),
             '&' => tokens.push(InfixAnd),
             '|' => tokens.push(InfixOr),
-            _ if c.is_whitespace() => {
-                if !tag.is_empty() {
-                    tokens.push(Tag(tag.clone()));
-                    tag.clear();
-                }
-            }
+            _ if c.is_whitespace() => if !tag.is_empty() {
+                tokens.push(Tag(tag.clone()));
+                tag.clear();
+            },
             _ => {
                 tag.push(c);
             }
@@ -88,6 +86,8 @@ fn test_parse() {
     use tagmap::MatchRule::*;
     assert_eq!(
         parse_infix("foo !bar"),
-        Ok(Rules(vec![Tags(vec!["foo".into()]), NotTags(vec!["bar".into()])]))
+        Ok(Rules(
+            vec![Tags(vec!["foo".into()]), NotTags(vec!["bar".into()])]
+        ))
     );
 }

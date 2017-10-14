@@ -17,7 +17,9 @@ impl Default for TaggerMap {
 
 impl TaggerMap {
     pub fn new() -> Self {
-        TaggerMap { tag_map: TagMap::new() }
+        TaggerMap {
+            tag_map: TagMap::new(),
+        }
     }
     pub fn from_file<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         let reader = BufReader::new(fs::File::open(path)?);

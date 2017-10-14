@@ -1,11 +1,11 @@
-extern crate tagmap;
 extern crate clap;
-extern crate rustyline;
+extern crate gdk;
+extern crate gdk_pixbuf;
+extern crate gtk;
 #[cfg(feature = "random")]
 extern crate rand;
-extern crate gtk;
-extern crate gdk_pixbuf;
-extern crate gdk;
+extern crate rustyline;
+extern crate tagmap;
 
 use clap::{App, AppSettings, Arg, SubCommand};
 use infix::parse_infix;
@@ -111,7 +111,7 @@ fn run() -> i32 {
         if std::fs::metadata(LIST_DEFAULT_FILENAME).is_ok() {
             eprintln!(
                 "Error: {} already exists. Use `update` subcommand to update an existing \
-                      list.",
+                 list.",
                 LIST_DEFAULT_FILENAME
             );
             return 1;
@@ -131,13 +131,11 @@ fn run() -> i32 {
             }
         };
         match list.update_from_dir(env::current_dir().unwrap()) {
-            Ok(count) => {
-                if count > 0 {
-                    println!("Added {} entries.", count);
-                } else {
-                    println!("Already up to date.");
-                }
-            }
+            Ok(count) => if count > 0 {
+                println!("Added {} entries.", count);
+            } else {
+                println!("Already up to date.");
+            },
             Err(e) => {
                 eprintln!("Error: {}", e);
                 return 1;
@@ -153,7 +151,7 @@ fn run() -> i32 {
     } else if let Some(matches) = matches.subcommand_matches("random") {
         #[cfg(feature = "random")]
         {
-            use rand::{Rng, thread_rng};
+            use rand::{thread_rng, Rng};
 
             let list = load_map!();
             let rule = parse_rule!(matches);
@@ -162,7 +160,6 @@ fn run() -> i32 {
                 println!("{}", choice);
             }
         }
-
     } else if let Some(matches) = matches.subcommand_matches("add-tags") {
         let tool_path = matches.value_of("TOOL").unwrap();
         let mut taggermap = match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {

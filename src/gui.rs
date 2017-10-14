@@ -58,8 +58,8 @@ fn update_grid(
                                 let dst = entry.get_text().unwrap();
                                 let mut map = map.borrow_mut();
                                 if map.tag_map.entries.get(&dst).is_some() {
-                                    use gtk::{ButtonsType, DIALOG_MODAL, MessageDialog,
-                                              MessageType};
+                                    use gtk::{ButtonsType, MessageDialog, MessageType,
+                                              DIALOG_MODAL};
                                     let msg = format!(
                                         "A file with the name \"{}\" already exists.",
                                         &dst
@@ -199,7 +199,11 @@ pub fn run(tagger_map: Rc<RefCell<TaggerMap>>) {
                     if n_images % SHOW_AT_ONCE != 0 {
                         n_pages += 1;
                     }
-                    if n_pages > 0 { n_pages - 1 } else { 0 }
+                    if n_pages > 0 {
+                        n_pages - 1
+                    } else {
+                        0
+                    }
                 };
                 page_counter.set(cmp::min(page_counter.get() + 1, max_offset));
                 update_grid(
