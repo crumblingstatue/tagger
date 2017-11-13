@@ -93,6 +93,7 @@ fn load_thumbnail(path: &str, size: u32) -> Option<Texture> {
     let xscale = size as f32 / orig.size().x as f32;
     let yscale = size as f32 / orig.size().y as f32;
     spr.set_scale((xscale, yscale));
+    rt.clear(&Color::WHITE);
     rt.draw(&spr);
     rt.display();
     Some(rt.texture().to_owned())
