@@ -92,7 +92,6 @@ fn load_thumbnail(path: &str, size: u32) -> Option<Texture> {
     let mut spr = Sprite::with_texture(&orig);
     let xscale = size as f32 / orig.size().x as f32;
     let yscale = size as f32 / orig.size().y as f32;
-    eprintln!("{} {}", xscale, yscale);
     spr.set_scale((xscale, yscale));
     rt.draw(&spr);
     rt.display();
