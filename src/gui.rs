@@ -55,7 +55,11 @@ fn draw_frames<'a, I: IntoIterator<Item = &'a Frame>>(
             (row * (frame_size + state.frame_gap)) as f32 - (state.y_offset % frame_size as f32);
         shape.set_position((x, y));
         target.draw(&shape);
-        let mut text = Text::new(&frame.debug_n.to_string(), &state.font, 16);
+        let mut text = Text::new(
+            &format!("{}\n{}", frame.debug_n, frame.name),
+            &state.font,
+            8,
+        );
         text.set_position((x, y));
         text.set_fill_color(&Color::BLACK);
         target.draw(&text);
