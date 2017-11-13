@@ -1,7 +1,4 @@
 extern crate clap;
-extern crate gdk;
-extern crate gdk_pixbuf;
-extern crate gtk;
 #[cfg(feature = "random")]
 extern crate rand;
 extern crate rustyline;
@@ -19,7 +16,6 @@ use tagger_map::TaggerMap;
 
 mod tagger_map;
 mod infix;
-mod gui;
 
 pub const LIST_DEFAULT_FILENAME: &'static str = "tagger.list";
 
@@ -215,17 +211,13 @@ fn run() -> i32 {
             println!("{}", tag);
         }
     } else if matches.subcommand_matches("gui").is_some() {
-        use std::rc::Rc;
-        use std::cell::RefCell;
-
-        let list = match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
-            Ok(list) => Rc::new(RefCell::new(list)),
+        let _list = match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
+            Ok(_) => unimplemented!(),
             Err(e) => {
                 eprintln!("Error opening {}: {}", LIST_DEFAULT_FILENAME, e);
                 return 1;
             }
         };
-        gui::run(list);
     }
     0
 }

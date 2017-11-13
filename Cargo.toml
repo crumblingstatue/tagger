@@ -12,6 +12,3 @@ tagmap = { path = "/home/snake/projects/github/crumblingstatue/tagmap" }
 clap = "2.4.3"
 rustyline = "1"
 rand = { version = "0.3.14", optional = true }
-gtk = { version = "0.2", features = ["v3_10"] }
-gdk-pixbuf = "0.2"
-gdk = "0.6"
