@@ -11,6 +11,7 @@ struct State {
     frame_gap: u32,
     y_offset: f32,
     font: Font,
+    fail_texture: Texture,
 }
 
 impl Default for State {
@@ -20,11 +21,13 @@ impl Default for State {
             frame_gap: 4,
             y_offset: 0.0,
             font: Font::from_memory(include_bytes!("../Vera.ttf")).unwrap(),
+            fail_texture: Texture::from_memory(include_bytes!("../fail.png"), &Default::default())
+                .unwrap(),
         }
     }
 }
 
-fn draw_frames<'a, I: IntoIterator<Item = &'a Frame>>(
+fn draw_frames<'a, I: IntoIterator<Item = &'a mut Frame>>(
     state: &State,
     frames: I,
     target: &mut RenderWindow,
@@ -55,6 +58,15 @@ fn draw_frames<'a, I: IntoIterator<Item = &'a Frame>>(
             (row * (frame_size + state.frame_gap)) as f32 - (state.y_offset % frame_size as f32);
         shape.set_position((x, y));
         target.draw(&shape);
+        {
+            let mut sprite = Sprite::with_texture(
+                frame
+                    .texture_lazy(frame_size)
+                    .unwrap_or(&state.fail_texture),
+            );
+            sprite.set_position((x, y));
+            target.draw(&sprite);
+        }
         let mut text = Text::new(
             &format!("{}\n{}", frame.debug_n, frame.name),
             &state.font,
@@ -71,6 +83,34 @@ struct Frame {
     name: String,
     tags: Vec<String>,
     debug_n: usize,
+    texture: Option<Texture>,
+}
+
+fn load_thumbnail(path: &str, size: u32) -> Option<Texture> {
+    let orig = Texture::from_file(path)?;
+    let mut rt = RenderTexture::new(size, size, false).unwrap();
+    let mut spr = Sprite::with_texture(&orig);
+    let xscale = size as f32 / orig.size().x as f32;
+    let yscale = size as f32 / orig.size().y as f32;
+    eprintln!("{} {}", xscale, yscale);
+    spr.set_scale((xscale, yscale));
+    rt.draw(&spr);
+    rt.display();
+    Some(rt.texture().to_owned())
+}
+
+impl Frame {
+    fn texture_lazy(&mut self, size: u32) -> Option<&Texture> {
+        let name = &self.name;
+        match self.texture {
+            Some(ref texture) => Some(texture),
+            None => {
+                let th = load_thumbnail(name, size)?;
+                self.texture = Some(th);
+                self.texture.as_ref()
+            }
+        }
+    }
 }
 
 fn construct_frameset(tagger_map: &TaggerMap, rule: &str) -> Result<Vec<Frame>, infix::ParseError> {
@@ -82,6 +122,7 @@ fn construct_frameset(tagger_map: &TaggerMap, rule: &str) -> Result<Vec<Frame>, 
             name: name.clone(),
             tags: tags.to_owned(),
             debug_n: i,
+            texture: None,
         });
     }
     Ok(frameset)
@@ -97,7 +138,7 @@ pub fn run(tagger_map: &mut TaggerMap) {
     window.set_framerate_limit(60);
 
     let mut state = State::default();
-    let frameset = construct_frameset(tagger_map, "").unwrap();
+    let mut frameset = construct_frameset(tagger_map, "").unwrap();
 
     while window.is_open() {
         while let Some(event) = window.poll_event() {
@@ -121,7 +162,7 @@ pub fn run(tagger_map: &mut TaggerMap) {
             state.y_offset = 0.0;
         }
         window.clear(&Color::BLACK);
-        draw_frames(&state, &frameset, &mut window);
+        draw_frames(&state, &mut frameset, &mut window);
         window.display();
     }
 }
