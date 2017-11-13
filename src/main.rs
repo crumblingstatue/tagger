@@ -68,8 +68,10 @@ fn run() -> i32 {
                 .arg(Arg::with_name("src").required(true))
                 .arg(Arg::with_name("dst").required(true)),
         )
-        .subcommand(SubCommand::with_name("list-tags"))
-        .subcommand(SubCommand::with_name("gui"));
+        .subcommand(SubCommand::with_name("list-tags"));
+    if cfg!(feature = "gui") {
+        app = app.subcommand(SubCommand::with_name("gui"));
+    }
     if cfg!(feature = "random") {
         app = app.subcommand(SubCommand::with_name("random").args_from_usage("[TAGS]..."));
     }
