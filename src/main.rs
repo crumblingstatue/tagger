@@ -217,7 +217,7 @@ fn run() -> i32 {
     } else if matches.subcommand_matches("gui").is_some() {
         #[cfg(feature = "random")]
         match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
-            Ok(_) => gui::run(),
+            Ok(mut map) => gui::run(&mut map),
             Err(e) => {
                 eprintln!("Error opening {}: {}", LIST_DEFAULT_FILENAME, e);
                 return 1;
