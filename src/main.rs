@@ -17,7 +17,7 @@ use tagger_map::TaggerMap;
 mod tagger_map;
 mod infix;
 
-pub const LIST_DEFAULT_FILENAME: &'static str = "tagger.list";
+pub const LIST_DEFAULT_FILENAME: &str = "tagger.list";
 
 struct TagCompleter {
     tags: BTreeSet<String>,
