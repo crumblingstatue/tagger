@@ -84,6 +84,7 @@ struct Frame {
     tags: Vec<String>,
     debug_n: usize,
     texture: Option<Texture>,
+    load_fail: bool,
 }
 
 fn load_thumbnail(path: &str, size: u32) -> Option<Texture> {
@@ -101,11 +102,20 @@ fn load_thumbnail(path: &str, size: u32) -> Option<Texture> {
 
 impl Frame {
     fn texture_lazy(&mut self, size: u32) -> Option<&Texture> {
+        if self.load_fail {
+            return None;
+        }
         let name = &self.name;
         match self.texture {
             Some(ref texture) => Some(texture),
             None => {
-                let th = load_thumbnail(name, size)?;
+                let th = match load_thumbnail(name, size) {
+                    Some(th) => th,
+                    None => {
+                        self.load_fail = true;
+                        return None;
+                    }
+                };
                 self.texture = Some(th);
                 self.texture.as_ref()
             }
@@ -123,6 +133,7 @@ fn construct_frameset(tagger_map: &TaggerMap, rule: &str) -> Result<Vec<Frame>, 
             tags: tags.to_owned(),
             debug_n: i,
             texture: None,
+            load_fail: false,
         });
     }
     Ok(frameset)
