@@ -39,14 +39,20 @@ fn draw_frames<'a, I: IntoIterator<Item = &'a Frame>>(
     // Since we can scroll, we can have another partially drawn frame per screen
     frames_per_column += 1;
     let frames_per_screen = (state.frames_per_row * frames_per_column) as usize;
-    let frames = frames.into_iter().take(frames_per_screen);
+    let row_offset = state.y_offset as u32 / frame_size;
+    let skip = row_offset * state.frames_per_row;
+    let frames = frames
+        .into_iter()
+        .skip(skip as usize)
+        .take(frames_per_screen);
     let mut shape = RectangleShape::with_size(Vector2f::new(frame_size as f32, frame_size as f32));
     for (i, frame) in frames.enumerate() {
         let i = i as u32;
         let column = i % state.frames_per_row;
         let row = i / state.frames_per_row;
         let x = (column * (frame_size + state.frame_gap)) as f32;
-        let y = (row * (frame_size + state.frame_gap)) as f32 - state.y_offset;
+        let y =
+            (row * (frame_size + state.frame_gap)) as f32 - (state.y_offset % frame_size as f32);
         shape.set_position((x, y));
         target.draw(&shape);
         let mut text = Text::new(&frame.debug_n.to_string(), &state.font, 16);
@@ -91,8 +97,14 @@ pub fn run(tagger_map: &mut TaggerMap) {
 
     while window.is_open() {
         while let Some(event) = window.poll_event() {
-            if let Event::Closed = event {
-                window.close();
+            match event {
+                Event::Closed => window.close(),
+                Event::KeyPressed { code, .. } => if code == Key::PageDown {
+                    state.y_offset += window.size().y as f32;
+                } else if code == Key::PageUp {
+                    state.y_offset -= window.size().y as f32;
+                },
+                _ => {}
             }
         }
         let scroll_speed = 8.0;
@@ -100,6 +112,9 @@ pub fn run(tagger_map: &mut TaggerMap) {
             state.y_offset += scroll_speed;
         } else if Key::Up.is_pressed() {
             state.y_offset -= scroll_speed;
+        }
+        if state.y_offset < 0.0 {
+            state.y_offset = 0.0;
         }
         window.clear(&Color::BLACK);
         draw_frames(&state, &frameset, &mut window);
