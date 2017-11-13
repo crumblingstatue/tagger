@@ -215,6 +215,7 @@ fn run() -> i32 {
             println!("{}", tag);
         }
     } else if matches.subcommand_matches("gui").is_some() {
+        #[cfg(feature = "random")]
         match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
             Ok(_) => gui::run(),
             Err(e) => {
