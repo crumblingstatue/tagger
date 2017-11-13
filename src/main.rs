@@ -16,6 +16,8 @@ use tagger_map::TaggerMap;
 
 mod tagger_map;
 mod infix;
+#[cfg(feature = "gui")]
+mod gui;
 
 pub const LIST_DEFAULT_FILENAME: &str = "tagger.list";
 
@@ -213,13 +215,13 @@ fn run() -> i32 {
             println!("{}", tag);
         }
     } else if matches.subcommand_matches("gui").is_some() {
-        let _list = match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
-            Ok(_) => unimplemented!(),
+        match TaggerMap::from_file(LIST_DEFAULT_FILENAME) {
+            Ok(_) => gui::run(),
             Err(e) => {
                 eprintln!("Error opening {}: {}", LIST_DEFAULT_FILENAME, e);
                 return 1;
             }
-        };
+        }
     }
     0
 }
