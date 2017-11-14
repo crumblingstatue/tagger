@@ -18,7 +18,7 @@ impl Default for State {
     fn default() -> Self {
         Self {
             frames_per_row: 5,
-            frame_gap: 4,
+            frame_gap: 2,
             y_offset: 0.0,
             font: Font::from_memory(include_bytes!("../Vera.ttf")).unwrap(),
             fail_texture: Texture::from_memory(include_bytes!("../fail.png"), &Default::default())
