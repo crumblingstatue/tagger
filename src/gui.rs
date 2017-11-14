@@ -65,7 +65,7 @@ fn draw_frames<'a, I: IntoIterator<Item = &'a mut Frame>>(
             target.draw(&sprite);
         }
         let mut text = Text::new(
-            &format!("{}\n{}", frame.debug_n, frame.name),
+            &frame.name,
             &state.font,
             8,
         );
@@ -79,7 +79,6 @@ fn draw_frames<'a, I: IntoIterator<Item = &'a mut Frame>>(
 struct Frame {
     name: String,
     tags: Vec<String>,
-    debug_n: usize,
     texture: Option<Texture>,
     load_fail: bool,
 }
@@ -124,11 +123,10 @@ fn construct_frameset(tagger_map: &TaggerMap, rule: &str) -> Result<Vec<Frame>, 
     let rules = infix::parse_infix(rule)?;
     let entries = tagger_map.tag_map.matching_entries(&rules);
     let mut frameset = Vec::new();
-    for (i, (name, tags)) in entries.enumerate() {
+    for (name, tags) in entries {
         frameset.push(Frame {
             name: name.clone(),
             tags: tags.to_owned(),
-            debug_n: i,
             texture: None,
             load_fail: false,
         });
