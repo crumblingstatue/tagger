@@ -61,11 +61,17 @@ fn draw_frames<'a, I: IntoIterator<Item = &'a mut Frame>>(
             (row * (frame_size + state.frame_gap)) as f32 - (state.y_offset % frame_size as f32);
         {
             let mut sprite = Sprite::with_texture(
-                frame
-                    .texture_lazy(frame_size)
-                    .unwrap_or(&state.fail_texture),
+                texture_lazy(
+                    &mut frame.load_fail,
+                    &frame.name,
+                    &mut frame.texture,
+                    frame_size,
+                ).unwrap_or(&state.fail_texture),
             );
             sprite.set_position((x, y));
+            if frame.selected {
+                sprite.set_color(&Color::GREEN);
+            }
             target.draw(&sprite);
         }
         let mut text = Text::new(&frame.name, &state.font, 8);
@@ -81,6 +87,7 @@ struct Frame {
     tags: Vec<String>,
     texture: Option<Texture>,
     load_fail: bool,
+    selected: bool,
 }
 
 fn load_thumbnail(path: &str, size: u32) -> Option<Texture> {
@@ -96,25 +103,27 @@ fn load_thumbnail(path: &str, size: u32) -> Option<Texture> {
     Some(rt.texture().to_owned())
 }
 
-impl Frame {
-    fn texture_lazy(&mut self, size: u32) -> Option<&Texture> {
-        if self.load_fail {
-            return None;
-        }
-        let name = &self.name;
-        match self.texture {
-            Some(ref texture) => Some(texture),
-            None => {
-                let th = match load_thumbnail(name, size) {
-                    Some(th) => th,
-                    None => {
-                        self.load_fail = true;
-                        return None;
-                    }
-                };
-                self.texture = Some(th);
-                self.texture.as_ref()
-            }
+fn texture_lazy<'t>(
+    load_fail: &mut bool,
+    name: &str,
+    texture: &'t mut Option<Texture>,
+    size: u32,
+) -> Option<&'t Texture> {
+    if *load_fail {
+        return None;
+    }
+    match *texture {
+        Some(ref texture) => Some(texture),
+        None => {
+            let th = match load_thumbnail(name, size) {
+                Some(th) => th,
+                None => {
+                    *load_fail = true;
+                    return None;
+                }
+            };
+            *texture = Some(th);
+            texture.as_ref()
         }
     }
 }
@@ -129,6 +138,7 @@ fn construct_frameset(tagger_map: &TaggerMap, rule: &str) -> Result<Vec<Frame>, 
             tags: tags.to_owned(),
             texture: None,
             load_fail: false,
+            selected: false,
         });
     }
     Ok(frameset)
@@ -154,15 +164,32 @@ pub fn run(tagger_map: &mut TaggerMap) {
                     state.y_offset += window.size().y as f32;
                 } else if code == Key::PageUp {
                     state.y_offset -= window.size().y as f32;
+                } else if code == Key::Return {
+                    let mut names: Vec<&str> = Vec::new();
+                    for f in &frameset {
+                        if f.selected {
+                            names.push(&f.name);
+                        }
+                    }
+                    open_in_image_viewer(&names);
                 },
                 Event::MouseButtonPressed { button, x, y } => if button == mouse::Button::Left {
                     let frame_x = x as u32 / (state.frame_size + state.frame_gap);
                     let frame_y =
                         (y as u32 + state.y_offset as u32) / (state.frame_size + state.frame_gap);
                     let frame_index = frame_y * state.frames_per_row + frame_x;
-                    open_in_image_viewer(&frameset[frame_index as usize].name);
+                    let frame = &mut frameset[frame_index as usize];
+                    if Key::LShift.is_pressed() {
+                        frame.selected = !frame.selected;
+                    } else {
+                        open_in_image_viewer(&[&frame.name]);
+                    }
                 },
-                Event::MouseWheelScrolled {wheel: mouse::Wheel::Vertical, delta, ..} => {
+                Event::MouseWheelScrolled {
+                    wheel: mouse::Wheel::Vertical,
+                    delta,
+                    ..
+                } => {
                     state.y_offset -= delta * 32.0;
                 }
                 _ => {}
@@ -183,7 +210,7 @@ pub fn run(tagger_map: &mut TaggerMap) {
     }
 }
 
-fn open_in_image_viewer(name: &str) {
+fn open_in_image_viewer(names: &[&str]) {
     use std::process::Command;
-    Command::new("viewnior").arg(name).spawn().unwrap();
+    Command::new("viewnior").args(names).spawn().unwrap();
 }
