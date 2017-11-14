@@ -162,6 +162,9 @@ pub fn run(tagger_map: &mut TaggerMap) {
                     let frame_index = frame_y * state.frames_per_row + frame_x;
                     open_in_image_viewer(&frameset[frame_index as usize].name);
                 },
+                Event::MouseWheelScrolled {wheel: mouse::Wheel::Vertical, delta, ..} => {
+                    state.y_offset -= delta * 32.0;
+                }
                 _ => {}
             }
         }
