@@ -54,8 +54,7 @@ fn draw_frames<'a, I: IntoIterator<Item = &'a mut Frame>>(
         let column = i % state.frames_per_row;
         let row = i / state.frames_per_row;
         let x = (column * frame_size) as f32;
-        let y =
-            (row * frame_size) as f32 - (state.y_offset % frame_size as f32);
+        let y = (row * frame_size) as f32 - (state.y_offset % frame_size as f32);
         {
             let mut sprite = Sprite::with_texture(
                 texture_lazy(
@@ -172,8 +171,7 @@ pub fn run(tagger_map: &mut TaggerMap) {
                 },
                 Event::MouseButtonPressed { button, x, y } => if button == mouse::Button::Left {
                     let frame_x = x as u32 / state.frame_size;
-                    let frame_y =
-                        (y as u32 + state.y_offset as u32) / state.frame_size;
+                    let frame_y = (y as u32 + state.y_offset as u32) / state.frame_size;
                     let frame_index = frame_y * state.frames_per_row + frame_x;
                     let frame = &mut frameset[frame_index as usize];
                     if Key::LShift.is_pressed() {
