@@ -12,17 +12,21 @@ struct State {
     y_offset: f32,
     font: Font,
     fail_texture: Texture,
+    frame_size: u32,
 }
 
-impl Default for State {
-    fn default() -> Self {
+impl State {
+    fn new(window_width: u32) -> Self {
+        let frames_per_row = 5;
+        let frame_gap = 2;
         Self {
-            frames_per_row: 5,
-            frame_gap: 2,
+            frames_per_row,
+            frame_gap,
             y_offset: 0.0,
             font: Font::from_memory(include_bytes!("../Vera.ttf")).unwrap(),
             fail_texture: Texture::from_memory(include_bytes!("../fail.png"), &Default::default())
                 .unwrap(),
+            frame_size: (window_width - frame_gap) / frames_per_row,
         }
     }
 }
@@ -32,8 +36,8 @@ fn draw_frames<'a, I: IntoIterator<Item = &'a mut Frame>>(
     frames: I,
     target: &mut RenderWindow,
 ) {
-    let Vector2u { x: tw, y: th } = target.size();
-    let frame_size = (tw - state.frame_gap) / state.frames_per_row;
+    let Vector2u { y: th, .. } = target.size();
+    let frame_size = state.frame_size;
     let mut frames_per_column = th / frame_size;
     // Compensate for truncating division
     if th % frame_size != 0 {
@@ -64,11 +68,7 @@ fn draw_frames<'a, I: IntoIterator<Item = &'a mut Frame>>(
             sprite.set_position((x, y));
             target.draw(&sprite);
         }
-        let mut text = Text::new(
-            &frame.name,
-            &state.font,
-            8,
-        );
+        let mut text = Text::new(&frame.name, &state.font, 8);
         text.set_position((x, y));
         text.set_fill_color(&Color::BLACK);
         target.draw(&text);
@@ -143,7 +143,7 @@ pub fn run(tagger_map: &mut TaggerMap) {
     );
     window.set_framerate_limit(60);
 
-    let mut state = State::default();
+    let mut state = State::new(window.size().x);
     let mut frameset = construct_frameset(tagger_map, "").unwrap();
 
     while window.is_open() {
@@ -154,6 +154,13 @@ pub fn run(tagger_map: &mut TaggerMap) {
                     state.y_offset += window.size().y as f32;
                 } else if code == Key::PageUp {
                     state.y_offset -= window.size().y as f32;
+                },
+                Event::MouseButtonPressed { button, x, y } => if button == mouse::Button::Left {
+                    let frame_x = x as u32 / (state.frame_size + state.frame_gap);
+                    let frame_y =
+                        (y as u32 + state.y_offset as u32) / (state.frame_size + state.frame_gap);
+                    let frame_index = frame_y * state.frames_per_row + frame_x;
+                    open_in_image_viewer(&frameset[frame_index as usize].name);
                 },
                 _ => {}
             }
@@ -171,4 +178,9 @@ pub fn run(tagger_map: &mut TaggerMap) {
         draw_frames(&state, &mut frameset, &mut window);
         window.display();
     }
+}
+
+fn open_in_image_viewer(name: &str) {
+    use std::process::Command;
+    Command::new("viewnior").arg(name).spawn().unwrap();
 }
