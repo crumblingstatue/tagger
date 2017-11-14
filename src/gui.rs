@@ -48,7 +48,6 @@ fn draw_frames<'a, I: IntoIterator<Item = &'a mut Frame>>(
         .into_iter()
         .skip(skip as usize)
         .take(frames_per_screen);
-    let mut shape = RectangleShape::with_size(Vector2f::new(frame_size as f32, frame_size as f32));
     for (i, frame) in frames.enumerate() {
         let i = i as u32;
         let column = i % state.frames_per_row;
@@ -56,8 +55,6 @@ fn draw_frames<'a, I: IntoIterator<Item = &'a mut Frame>>(
         let x = (column * (frame_size + state.frame_gap)) as f32;
         let y =
             (row * (frame_size + state.frame_gap)) as f32 - (state.y_offset % frame_size as f32);
-        shape.set_position((x, y));
-        target.draw(&shape);
         {
             let mut sprite = Sprite::with_texture(
                 frame
