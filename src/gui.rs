@@ -8,7 +8,6 @@ use infix;
 
 struct State {
     frames_per_row: u32,
-    frame_gap: u32,
     y_offset: f32,
     font: Font,
     fail_texture: Texture,
@@ -18,15 +17,13 @@ struct State {
 impl State {
     fn new(window_width: u32) -> Self {
         let frames_per_row = 5;
-        let frame_gap = 2;
         Self {
             frames_per_row,
-            frame_gap,
             y_offset: 0.0,
             font: Font::from_memory(include_bytes!("../Vera.ttf")).unwrap(),
             fail_texture: Texture::from_memory(include_bytes!("../fail.png"), &Default::default())
                 .unwrap(),
-            frame_size: (window_width - frame_gap) / frames_per_row,
+            frame_size: window_width / frames_per_row,
         }
     }
 }
@@ -56,9 +53,9 @@ fn draw_frames<'a, I: IntoIterator<Item = &'a mut Frame>>(
         let i = i as u32;
         let column = i % state.frames_per_row;
         let row = i / state.frames_per_row;
-        let x = (column * (frame_size + state.frame_gap)) as f32;
+        let x = (column * frame_size) as f32;
         let y =
-            (row * (frame_size + state.frame_gap)) as f32 - (state.y_offset % frame_size as f32);
+            (row * frame_size) as f32 - (state.y_offset % frame_size as f32);
         {
             let mut sprite = Sprite::with_texture(
                 texture_lazy(
@@ -174,9 +171,9 @@ pub fn run(tagger_map: &mut TaggerMap) {
                     open_in_image_viewer(&names);
                 },
                 Event::MouseButtonPressed { button, x, y } => if button == mouse::Button::Left {
-                    let frame_x = x as u32 / (state.frame_size + state.frame_gap);
+                    let frame_x = x as u32 / state.frame_size;
                     let frame_y =
-                        (y as u32 + state.y_offset as u32) / (state.frame_size + state.frame_gap);
+                        (y as u32 + state.y_offset as u32) / state.frame_size;
                     let frame_index = frame_y * state.frames_per_row + frame_x;
                     let frame = &mut frameset[frame_index as usize];
                     if Key::LShift.is_pressed() {
