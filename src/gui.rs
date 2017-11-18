@@ -64,14 +64,18 @@ fn draw_frames(
         let row = (on_screen_index as u32) / state.frames_per_row;
         let x = (column * frame_size) as f32;
         let y = (row * frame_size) as f32 - (state.y_offset % frame_size as f32);
-        texture_lazy_load(
-            &mut frame.load_fail,
-            &frame.name,
-            &mut frame.texture,
-            frame_size,
-            image_loader,
-            index,
-        );
+        if !frame.load_fail && frame.texture.is_none() {
+            if let Some(result) = image_loader.request(&frame.name, frame_size, index) {
+                match result {
+                    Ok(tex) => {
+                        frame.texture = Some(tex);
+                    }
+                    Err(_) => {
+                        frame.load_fail = true;
+                    }
+                }
+            }
+        }
         let mut sprite = Sprite::with_texture(if frame.load_fail {
             &state.fail_texture
         } else {
@@ -99,28 +103,6 @@ struct Frame {
     texture: Option<Texture>,
     load_fail: bool,
     selected: bool,
-}
-
-fn texture_lazy_load(
-    load_fail: &mut bool,
-    name: &str,
-    texture: &mut Option<Texture>,
-    size: u32,
-    loader: &mut ThumbnailLoader,
-    index: usize,
-) {
-    if !*load_fail && texture.is_none() {
-        if let Some(result) = loader.request(name, size, index) {
-            match result {
-                Ok(tex) => {
-                    *texture = Some(tex);
-                }
-                Err(_) => {
-                    *load_fail = true;
-                }
-            }
-        }
-    }
 }
 
 fn construct_frameset(tagger_map: &TaggerMap, rule: &str) -> Result<Vec<Frame>, infix::ParseError> {
