@@ -40,7 +40,7 @@ fn draw_frames(
     state: &State,
     frames: &mut [Frame],
     target: &mut RenderWindow,
-    image_loader: &mut ThumbnailLoader,
+    thumb_loader: &mut ThumbnailLoader,
 ) {
     let Vector2u { y: th, .. } = target.size();
     let frame_size = state.frame_size;
@@ -65,7 +65,7 @@ fn draw_frames(
         let x = (column * frame_size) as f32;
         let y = (row * frame_size) as f32 - (state.y_offset % frame_size as f32);
         if !frame.load_fail && frame.texture.is_none() {
-            if let Some(result) = image_loader.request(&frame.name, frame_size, index) {
+            if let Some(result) = thumb_loader.request(&frame.name, frame_size, index) {
                 match result {
                     Ok(tex) => {
                         frame.texture = Some(tex);
@@ -210,7 +210,7 @@ pub fn run(tagger_map: &mut TaggerMap) {
 
     let mut state = State::new(window.size().x);
     let mut frameset = construct_frameset(tagger_map, "").unwrap();
-    let mut image_loader = ThumbnailLoader::default();
+    let mut thumb_loader = ThumbnailLoader::default();
 
     while window.is_open() {
         while let Some(event) = window.poll_event() {
@@ -260,7 +260,7 @@ pub fn run(tagger_map: &mut TaggerMap) {
             state.y_offset = 0.0;
         }
         window.clear(&Color::BLACK);
-        draw_frames(&state, &mut frameset, &mut window, &mut image_loader);
+        draw_frames(&state, &mut frameset, &mut window, &mut thumb_loader);
         window.display();
     }
 }
