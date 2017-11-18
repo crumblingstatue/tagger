@@ -92,8 +92,16 @@ fn load_thumbnail(path: &str, size: u32) -> Option<Texture> {
     use std::io::prelude::*;
     use self::image::FilterType;
     let mut f = File::open(path).unwrap();
-    let mut buf = Vec::new();
-    f.read_to_end(&mut buf).unwrap();
+    // Try to load file as efficiently as possible, using a single compact allocation.
+    // We trust that `len` returned by metadata is correct.
+    let len = f.metadata().unwrap().len() as usize;
+    let mut buf = Vec::with_capacity(len as usize);
+    unsafe {
+        // Set length for `read_exact` to fill.
+        buf.set_len(len);
+        // This should fill all the uninitialized buffer.
+        f.read_exact(&mut buf).unwrap();
+    }
     // Because loading images is memory intensive, and we might load multiple images
     // in parallel, we eagerly drop some stuff in order to free up memory as soon as possible.
     drop(f);
