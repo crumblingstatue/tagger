@@ -64,18 +64,21 @@ fn draw_frames<'a, I: IntoIterator<Item = &'a mut Frame>>(
         let row = i / state.frames_per_row;
         let x = (column * frame_size) as f32;
         let y = (row * frame_size) as f32 - (state.y_offset % frame_size as f32);
+        texture_lazy_load(
+            &mut frame.load_fail,
+            &frame.name,
+            &mut frame.texture,
+            frame_size,
+            image_loader,
+        );
         {
-            let mut sprite = Sprite::with_texture(match texture_lazy(
-                &mut frame.load_fail,
-                &frame.name,
-                &mut frame.texture,
-                frame_size,
-                image_loader,
-            ) {
-                TextureLazyResult::Texture(t) => t,
-                TextureLazyResult::Loading => &state.loading_texture,
-                TextureLazyResult::Failed => &state.fail_texture,
-            });
+            let mut sprite = Sprite::with_texture(
+                match ThumbnailRef::from_slot(frame.load_fail, &frame.texture) {
+                    ThumbnailRef::Texture(t) => t,
+                    ThumbnailRef::Loading => &state.loading_texture,
+                    ThumbnailRef::Failed => &state.fail_texture,
+                },
+            );
             sprite.set_position((x, y));
             if frame.selected {
                 sprite.set_color(&Color::GREEN);
@@ -98,36 +101,45 @@ struct Frame {
     selected: bool,
 }
 
-enum TextureLazyResult<'a> {
+enum ThumbnailRef<'a> {
     Loading,
     Failed,
     Texture(&'a Texture),
 }
 
-fn texture_lazy<'t>(
+impl<'a> ThumbnailRef<'a> {
+    fn from_slot(load_fail: bool, tex: &'a Option<Texture>) -> Self {
+        if load_fail {
+            ThumbnailRef::Failed
+        } else {
+            match *tex {
+                Some(ref t) => ThumbnailRef::Texture(t),
+                None => ThumbnailRef::Loading,
+            }
+        }
+    }
+}
+
+fn texture_lazy_load(
     load_fail: &mut bool,
     name: &str,
-    texture: &'t mut Option<Texture>,
+    texture: &mut Option<Texture>,
     size: u32,
     loader: &mut ThumbnailLoader,
-) -> TextureLazyResult<'t> {
+) {
     if *load_fail {
-        return TextureLazyResult::Failed;
+        return;
     }
-    match *texture {
-        Some(ref texture) => TextureLazyResult::Texture(texture),
-        None => {
-            if let Some(result) = loader.request(name, size) {
-                match result {
-                    Ok(tex) => {
-                        *texture = Some(tex);
-                    }
-                    Err(_) => {
-                        *load_fail = true;
-                    }
+    if let None = *texture {
+        if let Some(result) = loader.request(name, size) {
+            match result {
+                Ok(tex) => {
+                    *texture = Some(tex);
+                }
+                Err(_) => {
+                    *load_fail = true;
                 }
             }
-            TextureLazyResult::Loading
         }
     }
 }
