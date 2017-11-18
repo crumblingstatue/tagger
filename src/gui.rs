@@ -56,12 +56,12 @@ fn draw_frames<'a, I: IntoIterator<Item = &'a mut Frame>>(
     let skip = row_offset * state.frames_per_row;
     let frames = frames
         .into_iter()
+        .enumerate()
         .skip(skip as usize)
         .take(frames_per_screen);
-    for (i, frame) in frames.enumerate() {
-        let i = i as u32;
-        let column = i % state.frames_per_row;
-        let row = i / state.frames_per_row;
+    for (on_screen_index, (index, frame)) in frames.enumerate() {
+        let column = (on_screen_index as u32) % state.frames_per_row;
+        let row = (on_screen_index as u32) / state.frames_per_row;
         let x = (column * frame_size) as f32;
         let y = (row * frame_size) as f32 - (state.y_offset % frame_size as f32);
         texture_lazy_load(
@@ -70,6 +70,7 @@ fn draw_frames<'a, I: IntoIterator<Item = &'a mut Frame>>(
             &mut frame.texture,
             frame_size,
             image_loader,
+            index,
         );
         let mut sprite = Sprite::with_texture(if frame.load_fail {
             &state.fail_texture
@@ -106,12 +107,13 @@ fn texture_lazy_load(
     texture: &mut Option<Texture>,
     size: u32,
     loader: &mut ThumbnailLoader,
+    index: usize,
 ) {
     if *load_fail {
         return;
     }
     if let None = *texture {
-        if let Some(result) = loader.request(name, size) {
+        if let Some(result) = loader.request(name, size, index) {
             match result {
                 Ok(tex) => {
                     *texture = Some(tex);
@@ -142,17 +144,32 @@ fn construct_frameset(tagger_map: &TaggerMap, rule: &str) -> Result<Vec<Frame>, 
 
 type RgbaBuf = ImageBuffer<Rgba<u8>, Vec<u8>>;
 
+const BUSY_WITH_NONE: usize = ::std::usize::MAX;
+
 /// Loads images on a separate thread, one at a time.
-#[derive(Default)]
 struct ThumbnailLoader {
-    busy_with: String,
+    busy_with: usize,
     image_slot: Arc<Mutex<Option<ImageResult<RgbaBuf>>>>,
 }
 
+impl Default for ThumbnailLoader {
+    fn default() -> Self {
+        Self {
+            busy_with: BUSY_WITH_NONE,
+            image_slot: Default::default(),
+        }
+    }
+}
+
 impl ThumbnailLoader {
-    fn request(&mut self, name: &str, size: u32) -> Option<Result<Texture, ImageError>> {
-        if self.busy_with.is_empty() {
-            self.busy_with = name.to_owned();
+    fn request(
+        &mut self,
+        name: &str,
+        size: u32,
+        index: usize,
+    ) -> Option<Result<Texture, ImageError>> {
+        if self.busy_with == BUSY_WITH_NONE {
+            self.busy_with = index;
             let image_slot = Arc::clone(&self.image_slot);
             let name = name.to_owned();
             ::std::thread::spawn(move || {
@@ -181,10 +198,10 @@ impl ThumbnailLoader {
                 *image_slot.lock().unwrap() = Some(result);
             });
             None
-        } else if self.busy_with == name {
+        } else if self.busy_with == index {
             match self.image_slot.lock().unwrap().take() {
                 Some(result) => {
-                    self.busy_with.clear();
+                    self.busy_with = BUSY_WITH_NONE;
                     match result {
                         Ok(buf) => {
                             let (w, h) = buf.dimensions();
