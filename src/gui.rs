@@ -91,11 +91,15 @@ fn load_thumbnail(path: &str, size: u32) -> Option<Texture> {
     use std::fs::File;
     use std::io::prelude::*;
     use self::image::FilterType;
-    ::std::io::stdout().flush().unwrap();
     let mut f = File::open(path).unwrap();
     let mut buf = Vec::new();
     f.read_to_end(&mut buf).unwrap();
-    let buffer = match image::load_from_memory(&buf) {
+    // Because loading images is memory intensive, and we might load multiple images
+    // in parallel, we eagerly drop some stuff in order to free up memory as soon as possible.
+    drop(f);
+    let image_result = image::load_from_memory(&buf);
+    drop(buf);
+    let buffer = match image_result {
         Ok(image) => image.resize(size, size, FilterType::Triangle).to_rgba(),
         Err(e) => {
             eprintln!("{}: {}", path, e);
