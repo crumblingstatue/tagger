@@ -4,7 +4,7 @@ extern crate sfml;
 use self::sfml::graphics::*;
 use self::sfml::window::*;
 use self::sfml::system::*;
-use self::image::{ImageBuffer, ImageError, ImageResult, Rgba};
+use self::image::{ImageBuffer, ImageResult, Rgba};
 use std::sync::{Arc, Mutex};
 use tagger_map::TaggerMap;
 use infix;
@@ -54,6 +54,7 @@ fn draw_frames(
     let frames_per_screen = (state.frames_per_row * frames_per_column) as usize;
     let row_offset = state.y_offset as u32 / frame_size;
     let skip = row_offset * state.frames_per_row;
+    thumb_loader.write_to_frameset(frames);
     let frames = frames
         .into_iter()
         .enumerate()
@@ -65,16 +66,7 @@ fn draw_frames(
         let x = (column * frame_size) as f32;
         let y = (row * frame_size) as f32 - (state.y_offset % frame_size as f32);
         if !frame.load_fail && frame.texture.is_none() {
-            if let Some(result) = thumb_loader.request(&frame.name, frame_size, index) {
-                match result {
-                    Ok(tex) => {
-                        frame.texture = Some(tex);
-                    }
-                    Err(_) => {
-                        frame.load_fail = true;
-                    }
-                }
-            }
+            thumb_loader.request(&frame.name, frame_size, index);
         }
         let mut sprite = Sprite::with_texture(if frame.load_fail {
             &state.fail_texture
@@ -141,12 +133,7 @@ impl Default for ThumbnailLoader {
 }
 
 impl ThumbnailLoader {
-    fn request(
-        &mut self,
-        name: &str,
-        size: u32,
-        index: usize,
-    ) -> Option<Result<Texture, ImageError>> {
+    fn request(&mut self, name: &str, size: u32, index: usize) {
         if self.busy_with == BUSY_WITH_NONE {
             self.busy_with = index;
             let image_slot = Arc::clone(&self.image_slot);
@@ -176,25 +163,20 @@ impl ThumbnailLoader {
                     image_result.map(|i| i.resize(size, size, FilterType::Triangle).to_rgba());
                 *image_slot.lock().unwrap() = Some(result);
             });
-            None
-        } else if self.busy_with == index {
-            match self.image_slot.lock().unwrap().take() {
-                Some(result) => {
-                    self.busy_with = BUSY_WITH_NONE;
-                    match result {
-                        Ok(buf) => {
-                            let (w, h) = buf.dimensions();
-                            let mut tex = Texture::new(w, h).unwrap();
-                            tex.update_from_pixels(&buf.into_raw(), w, h, 0, 0);
-                            Some(Ok(tex))
-                        }
-                        Err(e) => Some(Err(e)),
-                    }
+        }
+    }
+    fn write_to_frameset(&mut self, frameset: &mut [Frame]) {
+        if let Some(result) = self.image_slot.lock().unwrap().take() {
+            match result {
+                Ok(buf) => {
+                    let (w, h) = buf.dimensions();
+                    let mut tex = Texture::new(w, h).unwrap();
+                    tex.update_from_pixels(&buf.into_raw(), w, h, 0, 0);
+                    frameset[self.busy_with].texture = Some(tex);
                 }
-                None => None,
+                Err(_) => frameset[self.busy_with].load_fail = true,
             }
-        } else {
-            None
+            self.busy_with = BUSY_WITH_NONE;
         }
     }
 }
