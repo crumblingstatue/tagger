@@ -36,9 +36,9 @@ impl State {
     }
 }
 
-fn draw_frames<'a, I: IntoIterator<Item = &'a mut Frame>>(
+fn draw_frames(
     state: &State,
-    frames: I,
+    frames: &mut [Frame],
     target: &mut RenderWindow,
     image_loader: &mut ThumbnailLoader,
 ) {
