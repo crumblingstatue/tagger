@@ -71,20 +71,19 @@ fn draw_frames<'a, I: IntoIterator<Item = &'a mut Frame>>(
             frame_size,
             image_loader,
         );
-        {
-            let mut sprite = Sprite::with_texture(
-                match ThumbnailRef::from_slot(frame.load_fail, &frame.texture) {
-                    ThumbnailRef::Texture(t) => t,
-                    ThumbnailRef::Loading => &state.loading_texture,
-                    ThumbnailRef::Failed => &state.fail_texture,
-                },
-            );
-            sprite.set_position((x, y));
-            if frame.selected {
-                sprite.set_color(&Color::GREEN);
+        let mut sprite = Sprite::with_texture(if frame.load_fail {
+            &state.fail_texture
+        } else {
+            match frame.texture {
+                Some(ref t) => t,
+                None => &state.loading_texture,
             }
-            target.draw(&sprite);
+        });
+        sprite.set_position((x, y));
+        if frame.selected {
+            sprite.set_color(&Color::GREEN);
         }
+        target.draw(&sprite);
         let mut text = Text::new(&frame.name, &state.font, 8);
         text.set_position((x, y));
         text.set_fill_color(&Color::BLACK);
@@ -99,25 +98,6 @@ struct Frame {
     texture: Option<Texture>,
     load_fail: bool,
     selected: bool,
-}
-
-enum ThumbnailRef<'a> {
-    Loading,
-    Failed,
-    Texture(&'a Texture),
-}
-
-impl<'a> ThumbnailRef<'a> {
-    fn from_slot(load_fail: bool, tex: &'a Option<Texture>) -> Self {
-        if load_fail {
-            ThumbnailRef::Failed
-        } else {
-            match *tex {
-                Some(ref t) => ThumbnailRef::Texture(t),
-                None => ThumbnailRef::Loading,
-            }
-        }
-    }
 }
 
 fn texture_lazy_load(
