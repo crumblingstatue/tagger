@@ -4,7 +4,7 @@ extern crate sfml;
 use self::sfml::graphics::*;
 use self::sfml::window::*;
 use self::sfml::system::*;
-use self::image::{ImageBuffer, ImageResult, Rgba};
+use self::image::{ImageBuffer, ImageError, ImageResult, Rgba};
 use std::sync::{Arc, Mutex};
 use tagger_map::TaggerMap;
 use infix;
@@ -119,10 +119,7 @@ fn texture_lazy<'t>(
         None => {
             if let Some(result) = loader.request(name, size) {
                 match result {
-                    Ok(buffer) => {
-                        let (w, h) = buffer.dimensions();
-                        let mut tex = Texture::new(w, h).unwrap();
-                        tex.update_from_pixels(&buffer.into_raw(), w, h, 0, 0);
+                    Ok(tex) => {
                         *texture = Some(tex);
                     }
                     Err(_) => {
@@ -161,7 +158,7 @@ struct ThumbnailLoader {
 }
 
 impl ThumbnailLoader {
-    fn request(&mut self, name: &str, size: u32) -> Option<ImageResult<RgbaBuf>> {
+    fn request(&mut self, name: &str, size: u32) -> Option<Result<Texture, ImageError>> {
         if self.busy_with.is_empty() {
             self.busy_with = name.to_owned();
             let image_slot = Arc::clone(&self.image_slot);
@@ -196,7 +193,15 @@ impl ThumbnailLoader {
             match self.image_slot.lock().unwrap().take() {
                 Some(result) => {
                     self.busy_with.clear();
-                    Some(result)
+                    match result {
+                        Ok(buf) => {
+                            let (w, h) = buf.dimensions();
+                            let mut tex = Texture::new(w, h).unwrap();
+                            tex.update_from_pixels(&buf.into_raw(), w, h, 0, 0);
+                            Some(Ok(tex))
+                        }
+                        Err(e) => Some(Err(e)),
+                    }
                 }
                 None => None,
             }
