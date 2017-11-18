@@ -109,10 +109,7 @@ fn texture_lazy_load(
     loader: &mut ThumbnailLoader,
     index: usize,
 ) {
-    if *load_fail {
-        return;
-    }
-    if let None = *texture {
+    if !*load_fail && texture.is_none() {
         if let Some(result) = loader.request(name, size, index) {
             match result {
                 Ok(tex) => {
