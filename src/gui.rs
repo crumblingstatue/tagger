@@ -40,7 +40,7 @@ fn draw_frames<'a, I: IntoIterator<Item = &'a mut Frame>>(
     state: &State,
     frames: I,
     target: &mut RenderWindow,
-    image_loader: &mut ImageLoader,
+    image_loader: &mut ThumbnailLoader,
 ) {
     let Vector2u { y: th, .. } = target.size();
     let frame_size = state.frame_size;
@@ -109,7 +109,7 @@ fn texture_lazy<'t>(
     name: &str,
     texture: &'t mut Option<Texture>,
     size: u32,
-    loader: &mut ImageLoader,
+    loader: &mut ThumbnailLoader,
 ) -> TextureLazyResult<'t> {
     if *load_fail {
         return TextureLazyResult::Failed;
@@ -155,12 +155,12 @@ type RgbaBuf = ImageBuffer<Rgba<u8>, Vec<u8>>;
 
 /// Loads images on a separate thread, one at a time.
 #[derive(Default)]
-struct ImageLoader {
+struct ThumbnailLoader {
     busy_with: String,
     image_slot: Arc<Mutex<Option<ImageResult<RgbaBuf>>>>,
 }
 
-impl ImageLoader {
+impl ThumbnailLoader {
     fn request(&mut self, name: &str, size: u32) -> Option<ImageResult<RgbaBuf>> {
         if self.busy_with.is_empty() {
             self.busy_with = name.to_owned();
@@ -217,7 +217,7 @@ pub fn run(tagger_map: &mut TaggerMap) {
 
     let mut state = State::new(window.size().x);
     let mut frameset = construct_frameset(tagger_map, "").unwrap();
-    let mut image_loader = ImageLoader::default();
+    let mut image_loader = ThumbnailLoader::default();
 
     while window.is_open() {
         while let Some(event) = window.poll_event() {
