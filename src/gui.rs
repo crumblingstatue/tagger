@@ -1,3 +1,4 @@
+extern crate image;
 extern crate sfml;
 
 use self::sfml::graphics::*;
@@ -87,16 +88,24 @@ struct Frame {
 }
 
 fn load_thumbnail(path: &str, size: u32) -> Option<Texture> {
-    let orig = Texture::from_file(path)?;
-    let mut rt = RenderTexture::new(size, size, false).unwrap();
-    let mut spr = Sprite::with_texture(&orig);
-    let xscale = size as f32 / orig.size().x as f32;
-    let yscale = size as f32 / orig.size().y as f32;
-    spr.set_scale((xscale, yscale));
-    rt.clear(&Color::WHITE);
-    rt.draw(&spr);
-    rt.display();
-    Some(rt.texture().to_owned())
+    use std::fs::File;
+    use std::io::prelude::*;
+    use self::image::FilterType;
+    ::std::io::stdout().flush().unwrap();
+    let mut f = File::open(path).unwrap();
+    let mut buf = Vec::new();
+    f.read_to_end(&mut buf).unwrap();
+    let buffer = match image::load_from_memory(&buf) {
+        Ok(image) => image.resize(size, size, FilterType::Triangle).to_rgba(),
+        Err(e) => {
+            eprintln!("{}: {}", path, e);
+            return None;
+        }
+    };
+    let (w, h) = buffer.dimensions();
+    let mut tex = Texture::new(w, h).unwrap();
+    tex.update_from_pixels(&buffer.into_raw(), w, h, 0, 0);
+    Some(tex)
 }
 
 fn texture_lazy<'t>(
