@@ -4,6 +4,8 @@ extern crate sfml;
 use self::sfml::graphics::*;
 use self::sfml::window::*;
 use self::sfml::system::*;
+use self::image::{ImageBuffer, ImageResult, Rgba};
+use std::sync::{Arc, Mutex};
 use tagger_map::TaggerMap;
 use infix;
 
@@ -12,6 +14,7 @@ struct State {
     y_offset: f32,
     font: Font,
     fail_texture: Texture,
+    loading_texture: Texture,
     frame_size: u32,
 }
 
@@ -24,6 +27,10 @@ impl State {
             font: Font::from_memory(include_bytes!("../Vera.ttf")).unwrap(),
             fail_texture: Texture::from_memory(include_bytes!("../fail.png"), &Default::default())
                 .unwrap(),
+            loading_texture: Texture::from_memory(
+                include_bytes!("../loading.png"),
+                &Default::default(),
+            ).unwrap(),
             frame_size: window_width / frames_per_row,
         }
     }
@@ -33,6 +40,7 @@ fn draw_frames<'a, I: IntoIterator<Item = &'a mut Frame>>(
     state: &State,
     frames: I,
     target: &mut RenderWindow,
+    image_loader: &mut ImageLoader,
 ) {
     let Vector2u { y: th, .. } = target.size();
     let frame_size = state.frame_size;
@@ -57,14 +65,17 @@ fn draw_frames<'a, I: IntoIterator<Item = &'a mut Frame>>(
         let x = (column * frame_size) as f32;
         let y = (row * frame_size) as f32 - (state.y_offset % frame_size as f32);
         {
-            let mut sprite = Sprite::with_texture(
-                texture_lazy(
-                    &mut frame.load_fail,
-                    &frame.name,
-                    &mut frame.texture,
-                    frame_size,
-                ).unwrap_or(&state.fail_texture),
-            );
+            let mut sprite = Sprite::with_texture(match texture_lazy(
+                &mut frame.load_fail,
+                &frame.name,
+                &mut frame.texture,
+                frame_size,
+                image_loader,
+            ) {
+                TextureLazyResult::Texture(t) => t,
+                TextureLazyResult::Loading => &state.loading_texture,
+                TextureLazyResult::Failed => &state.fail_texture,
+            });
             sprite.set_position((x, y));
             if frame.selected {
                 sprite.set_color(&Color::GREEN);
@@ -87,37 +98,10 @@ struct Frame {
     selected: bool,
 }
 
-fn load_thumbnail(path: &str, size: u32) -> Option<Texture> {
-    use std::fs::File;
-    use std::io::prelude::*;
-    use self::image::FilterType;
-    let mut f = File::open(path).unwrap();
-    // Try to load file as efficiently as possible, using a single compact allocation.
-    // We trust that `len` returned by metadata is correct.
-    let len = f.metadata().unwrap().len() as usize;
-    let mut buf = Vec::with_capacity(len as usize);
-    unsafe {
-        // Set length for `read_exact` to fill.
-        buf.set_len(len);
-        // This should fill all the uninitialized buffer.
-        f.read_exact(&mut buf).unwrap();
-    }
-    // Because loading images is memory intensive, and we might load multiple images
-    // in parallel, we eagerly drop some stuff in order to free up memory as soon as possible.
-    drop(f);
-    let image_result = image::load_from_memory(&buf);
-    drop(buf);
-    let buffer = match image_result {
-        Ok(image) => image.resize(size, size, FilterType::Triangle).to_rgba(),
-        Err(e) => {
-            eprintln!("{}: {}", path, e);
-            return None;
-        }
-    };
-    let (w, h) = buffer.dimensions();
-    let mut tex = Texture::new(w, h).unwrap();
-    tex.update_from_pixels(&buffer.into_raw(), w, h, 0, 0);
-    Some(tex)
+enum TextureLazyResult<'a> {
+    Loading,
+    Failed,
+    Texture(&'a Texture),
 }
 
 fn texture_lazy<'t>(
@@ -125,22 +109,28 @@ fn texture_lazy<'t>(
     name: &str,
     texture: &'t mut Option<Texture>,
     size: u32,
-) -> Option<&'t Texture> {
+    loader: &mut ImageLoader,
+) -> TextureLazyResult<'t> {
     if *load_fail {
-        return None;
+        return TextureLazyResult::Failed;
     }
     match *texture {
-        Some(ref texture) => Some(texture),
+        Some(ref texture) => TextureLazyResult::Texture(texture),
         None => {
-            let th = match load_thumbnail(name, size) {
-                Some(th) => th,
-                None => {
-                    *load_fail = true;
-                    return None;
+            if let Some(result) = loader.request(name, size) {
+                match result {
+                    Ok(buffer) => {
+                        let (w, h) = buffer.dimensions();
+                        let mut tex = Texture::new(w, h).unwrap();
+                        tex.update_from_pixels(&buffer.into_raw(), w, h, 0, 0);
+                        *texture = Some(tex);
+                    }
+                    Err(_) => {
+                        *load_fail = true;
+                    }
                 }
-            };
-            *texture = Some(th);
-            texture.as_ref()
+            }
+            TextureLazyResult::Loading
         }
     }
 }
@@ -161,6 +151,61 @@ fn construct_frameset(tagger_map: &TaggerMap, rule: &str) -> Result<Vec<Frame>, 
     Ok(frameset)
 }
 
+type RgbaBuf = ImageBuffer<Rgba<u8>, Vec<u8>>;
+
+/// Loads images on a separate thread, one at a time.
+#[derive(Default)]
+struct ImageLoader {
+    busy_with: String,
+    image_slot: Arc<Mutex<Option<ImageResult<RgbaBuf>>>>,
+}
+
+impl ImageLoader {
+    fn request(&mut self, name: &str, size: u32) -> Option<ImageResult<RgbaBuf>> {
+        if self.busy_with.is_empty() {
+            self.busy_with = name.to_owned();
+            let image_slot = Arc::clone(&self.image_slot);
+            let name = name.to_owned();
+            ::std::thread::spawn(move || {
+                use std::fs::File;
+                use std::io::prelude::*;
+                use self::image::FilterType;
+                let mut f = File::open(name).unwrap();
+                // Try to load file as efficiently as possible, using a single compact allocation.
+                // We trust that `len` returned by metadata is correct.
+                let len = f.metadata().unwrap().len() as usize;
+                let mut buf = Vec::with_capacity(len as usize);
+                unsafe {
+                    // Set length for `read_exact` to fill.
+                    buf.set_len(len);
+                    // This should fill all the uninitialized buffer.
+                    f.read_exact(&mut buf).unwrap();
+                }
+                // Because loading images is memory intensive, and we might load multiple images
+                // in parallel, we eagerly drop some stuff in order to free up memory
+                // as soon as possible.
+                drop(f);
+                let image_result = image::load_from_memory(&buf);
+                drop(buf);
+                let result =
+                    image_result.map(|i| i.resize(size, size, FilterType::Triangle).to_rgba());
+                *image_slot.lock().unwrap() = Some(result);
+            });
+            None
+        } else if self.busy_with == name {
+            match self.image_slot.lock().unwrap().take() {
+                Some(result) => {
+                    self.busy_with.clear();
+                    Some(result)
+                }
+                None => None,
+            }
+        } else {
+            None
+        }
+    }
+}
+
 pub fn run(tagger_map: &mut TaggerMap) {
     let mut window = RenderWindow::new(
         VideoMode::desktop_mode(),
@@ -172,6 +217,7 @@ pub fn run(tagger_map: &mut TaggerMap) {
 
     let mut state = State::new(window.size().x);
     let mut frameset = construct_frameset(tagger_map, "").unwrap();
+    let mut image_loader = ImageLoader::default();
 
     while window.is_open() {
         while let Some(event) = window.poll_event() {
@@ -221,7 +267,7 @@ pub fn run(tagger_map: &mut TaggerMap) {
             state.y_offset = 0.0;
         }
         window.clear(&Color::BLACK);
-        draw_frames(&state, &mut frameset, &mut window);
+        draw_frames(&state, &mut frameset, &mut window, &mut image_loader);
         window.display();
     }
 }
